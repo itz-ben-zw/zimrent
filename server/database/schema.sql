@@ -1,0 +1,92 @@
+-- ZimRent Database Schema
+
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  fullName TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  passwordHash TEXT NOT NULL,
+  role TEXT NOT NULL CHECK(role IN ('tenant', 'landlord', 'admin')) DEFAULT 'tenant',
+  phone TEXT DEFAULT '',
+  profileImage TEXT DEFAULT '',
+  emailVerified INTEGER NOT NULL DEFAULT 0,
+  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  updatedAt TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS properties (
+  id TEXT PRIMARY KEY,
+  landlordId TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  city TEXT NOT NULL,
+  suburb TEXT NOT NULL,
+  type TEXT NOT NULL,
+  bedrooms INTEGER NOT NULL DEFAULT 1,
+  bathrooms REAL NOT NULL DEFAULT 1,
+  price REAL NOT NULL DEFAULT 0,
+  currency TEXT NOT NULL DEFAULT 'USD',
+  solar INTEGER NOT NULL DEFAULT 0,
+  borehole INTEGER NOT NULL DEFAULT 0,
+  fenced INTEGER NOT NULL DEFAULT 0,
+  customAdditions TEXT DEFAULT '',
+  images TEXT DEFAULT '[]',
+  phone TEXT DEFAULT '',
+  email TEXT DEFAULT '',
+  whatsapp TEXT DEFAULT '',
+  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  updatedAt TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (landlordId) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS applications (
+  id TEXT PRIMARY KEY,
+  propertyId TEXT NOT NULL,
+  tenantId TEXT NOT NULL,
+  message TEXT DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'accepted', 'rejected')),
+  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (propertyId) REFERENCES properties(id) ON DELETE CASCADE,
+  FOREIGN KEY (tenantId) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS favorites (
+  id TEXT PRIMARY KEY,
+  userId TEXT NOT NULL,
+  propertyId TEXT NOT NULL,
+  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (propertyId) REFERENCES properties(id) ON DELETE CASCADE,
+  UNIQUE(userId, propertyId)
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+  id TEXT PRIMARY KEY,
+  senderId TEXT NOT NULL,
+  receiverId TEXT NOT NULL,
+  propertyId TEXT,
+  message TEXT NOT NULL,
+  read INTEGER NOT NULL DEFAULT 0,
+  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (senderId) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (receiverId) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (propertyId) REFERENCES properties(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id TEXT PRIMARY KEY,
+  userId TEXT NOT NULL,
+  type TEXT NOT NULL,
+  message TEXT NOT NULL,
+  read INTEGER NOT NULL DEFAULT 0,
+  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_properties_landlord ON properties(landlordId);
+CREATE INDEX IF NOT EXISTS idx_properties_city ON properties(city);
+CREATE INDEX IF NOT EXISTS idx_applications_property ON applications(propertyId);
+CREATE INDEX IF NOT EXISTS idx_applications_tenant ON applications(tenantId);
+CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(userId);
+CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(senderId);
+CREATE INDEX IF NOT EXISTS idx_messages_receiver ON messages(receiverId);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(userId);
