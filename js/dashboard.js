@@ -26,8 +26,8 @@ function initDashboard() {
 
 async function fetchListings(landlordId) {
   const headers = { 'Content-Type': 'application/json' };
-  const session = getCurrentUser ? getCurrentUser() : null;
-  if (session) headers['Authorization'] = 'Bearer ' + session;
+  const session = getSession ? getSession() : null;
+  if (session && session.token) headers['Authorization'] = 'Bearer ' + session.token;
   
   const res = await fetch(`/api/properties?landlordId=${landlordId}`, { headers });
   if (!res.ok) throw new Error('Failed to fetch');
@@ -114,8 +114,8 @@ async function handleListingSubmit(e) {
   e.preventDefault();
   
   const headers = { 'Content-Type': 'application/json' };
-  const session = getCurrentUser ? getCurrentUser() : null;
-  if (session) headers['Authorization'] = 'Bearer ' + session;
+  const session = getSession ? getSession() : null;
+  if (session && session.token) headers['Authorization'] = 'Bearer ' + session.token;
   
   const url = editingId ? `/api/properties/${editingId}` : '/api/properties';
   const method = editingId ? 'PUT' : 'POST';
@@ -184,8 +184,8 @@ async function confirmDelete(id) {
   if (!confirm('Are you sure you want to delete this listing? This action cannot be undone.')) return;
   
   const headers = { 'Content-Type': 'application/json' };
-  const session = getCurrentUser ? getCurrentUser() : null;
-  if (session) headers['Authorization'] = 'Bearer ' + session;
+  const session = getSession ? getSession() : null;
+  if (session && session.token) headers['Authorization'] = 'Bearer ' + session.token;
   
   const res = await fetch(`/api/properties/${id}`, { method: 'DELETE', headers });
   if (!res.ok) {
@@ -199,7 +199,7 @@ async function confirmDelete(id) {
   renderListingsTable(listings);
 }
 
-function initAddListing() {
+async function initAddListing() {
   if (!requireLogin()) return;
   
   const editId = sessionStorage.getItem('edit_listing_id');
@@ -209,8 +209,18 @@ function initAddListing() {
   
   if (editId) {
     editingId = editId;
-    const listing = getListing(editId);
-    if (listing) prefillForm(listing);
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const session = getSession ? getSession() : null;
+      if (session && session.token) headers['Authorization'] = 'Bearer ' + session.token;
+      const res = await fetch(`/api/properties/${editId}`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.property) prefillForm(data.property);
+      }
+    } catch (err) {
+      console.error('Failed to fetch property for edit:', err);
+    }
     sessionStorage.removeItem('edit_listing_id');
   }
 }

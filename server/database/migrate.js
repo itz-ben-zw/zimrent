@@ -1,22 +1,26 @@
+const initSqlJs = require('sql.js');
 const fs = require('fs');
 const path = require('path');
-const { getDb } = require('./db');
 
-function runMigration() {
-  const db = getDb();
-  const schemaPath = path.join(__dirname, 'schema.sql');
-  const schema = fs.readFileSync(schemaPath, 'utf8');
+const DB_PATH = path.join(__dirname, '..', 'zimrent.db');
+const SCHEMA_PATH = path.join(__dirname, 'schema.sql');
 
-  const statements = schema.split(';').filter(s => s.trim().length > 0);
-  
-  for (const stmt of statements) {
-    try {
-      db.exec(stmt);
-    } catch (e) {
-      console.error('Migration error:', e.message);
-    }
+async function runMigration() {
+  const SQL = await initSqlJs();
+  const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
+
+  let sqlDb;
+  if (fs.existsSync(DB_PATH)) {
+    const buffer = fs.readFileSync(DB_PATH);
+    sqlDb = new SQL.Database(buffer);
+  } else {
+    sqlDb = new SQL.Database();
   }
 
+  sqlDb.exec(schema);
+  const data = sqlDb.export();
+  fs.writeFileSync(DB_PATH, Buffer.from(data));
+  sqlDb.close();
   console.log('✓ Database migrated successfully');
 }
 

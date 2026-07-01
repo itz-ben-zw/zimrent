@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile — ZimRent</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">Zim<span>Rent</span></a>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="listings.html">Browse</a></li>
+            <li><a href="conversations.html">Messages</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="#" id="nav-logout" style="display:none;" onclick="logout(); return false;">Logout</a></li>
+            <li><span id="nav-user-info" style="display:none; font-weight:600; color:var(--primary);"></span></li>
+        </ul>
+        <button class="menu-toggle">☰</button>
+    </nav>
+
+    <div class="container" style="max-width:600px; margin-top:2rem;">
+        <div class="form-card">
+            <h2>My Profile</h2>
+            <p style="color:var(--text-muted); margin-bottom:2rem;">Update your personal information</p>
+            
+            <div id="auth-error" style="display:none; padding:0.8rem; background:#ffe6e6; color:var(--danger); border-radius:8px; margin-bottom:1rem; font-size:0.9rem;"></div>
+            <div id="auth-success" style="display:none; padding:0.8rem; background:#d4edda; color:#155724; border-radius:8px; margin-bottom:1rem; font-size:0.9rem;"></div>
+
+            <div style="text-align:center; margin-bottom:2rem;">
+                <div id="profile-pic-container" style="width:120px; height:120px; border-radius:50%; overflow:hidden; margin:0 auto; background:#e0e0e0; display:flex; align-items:center; justify-content:center; border:3px solid var(--primary);">
+                    <i class="fas fa-user-circle" style="font-size:5rem; color:#999;" id="profile-pic-placeholder"></i>
+                    <img id="profile-pic-img" style="width:100%; height:100%; object-fit:cover; display:none;">
+                </div>
+                <div style="margin-top:0.8rem;">
+                    <label for="profile-pic-upload" class="btn btn-sm btn-outline" style="cursor:pointer;">Change Photo</label>
+                    <input type="file" id="profile-pic-upload" accept="image/*" style="display:none;">
+                </div>
+            </div>
+
+            <form id="profile-form">
+                <div class="form-group">
+                    <label for="profile-name">Full Name</label>
+                    <input type="text" id="profile-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="profile-email">Email</label>
+                    <input type="email" id="profile-email" disabled>
+                </div>
+                <div class="form-group">
+                    <label for="profile-phone">Phone Number</label>
+                    <input type="tel" id="profile-phone" placeholder="+263 77 000 0000">
+                </div>
+                <div class="form-group">
+                    <label for="profile-role">Account Type</label>
+                    <input type="text" id="profile-role" disabled>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg" style="width:100%; margin-top:1rem;">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer" style="margin-top:3rem;">
+        <p style="font-weight:700; font-size:1.1rem;">Zim<span style="color:var(--secondary);">Rent</span></p>
+        <p style="color:#aaa; font-size:0.85rem; margin-top:0.5rem;">© 2025 ZimRent. Built for Zimbabwe.</p>
+    </footer>
+
+    <script src="js/auth.js?v=2"></script>
+    <script src="js/app.js?v=2"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (!requireLogin()) return;
+        
+        const session = getSession();
+        if (!session || !session.user) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        const user = session.user;
+        document.getElementById('profile-name').value = user.fullName || '';
+        document.getElementById('profile-email').value = user.email || '';
+        document.getElementById('profile-phone').value = user.phone || '';
+        document.getElementById('profile-role').value = user.role === 'landlord' ? 'Landlord' : user.role === 'tenant' ? 'Tenant' : 'Admin';
+
+        if (user.profileImage) {
+            document.getElementById('profile-pic-img').src = user.profileImage;
+            document.getElementById('profile-pic-img').style.display = 'block';
+            document.getElementById('profile-pic-placeholder').style.display = 'none';
+        }
+
+        // Profile picture upload
+        document.getElementById('profile-pic-upload').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                document.getElementById('profile-pic-img').src = ev.target.result;
+                document.getElementById('profile-pic-img').style.display = 'block';
+                document.getElementById('profile-pic-placeholder').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Save profile
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errorEl = document.getElementById('auth-error');
+            const successEl = document.getElementById('auth-success');
+            errorEl.style.display = 'none';
+            successEl.style.display = 'none';
+
+            const headers = { 'Content-Type': 'application/json' };
+            if (session && session.token) headers['Authorization'] = 'Bearer ' + session.token;
+
+            const body = {
+                fullName: document.getElementById('profile-name').value.trim(),
+                phone: document.getElementById('profile-phone').value.trim()
+            };
+
+            try {
+                const res = await fetch('/api/auth/profile', {
+                    method: 'PUT',
+                    headers,
+                    body: JSON.stringify(body)
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    session.user.fullName = data.user.fullName;
+                    session.user.phone = data.user.phone;
+                    sessionStorage.setItem('zimrent_session', JSON.stringify(session));
+                    
+                    // Also save profile image
+                    const pic = document.getElementById('profile-pic-img').src;
+                    if (pic && pic.startsWith('data:')) {
+                        session.user.profileImage = pic;
+                        sessionStorage.setItem('zimrent_session', JSON.stringify(session));
+                    }
+
+                    successEl.textContent = 'Profile updated successfully!';
+                    successEl.style.display = 'block';
+                    updateNavbar();
+                } else {
+                    const err = await res.json();
+                    errorEl.textContent = err.error || 'Failed to update profile';
+                    errorEl.style.display = 'block';
+                }
+            } catch (err) {
+                errorEl.textContent = 'Network error. Please try again.';
+                errorEl.style.display = 'block';
+            }
+        });
+    });
+    </script>
+</body>
+</html>

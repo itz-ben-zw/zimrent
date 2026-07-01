@@ -59,17 +59,28 @@ CREATE TABLE IF NOT EXISTS favorites (
   UNIQUE(userId, propertyId)
 );
 
+CREATE TABLE IF NOT EXISTS conversations (
+  id TEXT PRIMARY KEY,
+  propertyId TEXT NOT NULL,
+  landlordId TEXT NOT NULL,
+  tenantId TEXT NOT NULL,
+  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  updatedAt TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (propertyId) REFERENCES properties(id) ON DELETE CASCADE,
+  FOREIGN KEY (landlordId) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (tenantId) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE(propertyId, landlordId, tenantId)
+);
+
 CREATE TABLE IF NOT EXISTS messages (
   id TEXT PRIMARY KEY,
+  conversationId TEXT NOT NULL,
   senderId TEXT NOT NULL,
-  receiverId TEXT NOT NULL,
-  propertyId TEXT,
-  message TEXT NOT NULL,
+  text TEXT NOT NULL,
   read INTEGER NOT NULL DEFAULT 0,
   createdAt TEXT NOT NULL DEFAULT (datetime('now')),
-  FOREIGN KEY (senderId) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (receiverId) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (propertyId) REFERENCES properties(id) ON DELETE SET NULL
+  FOREIGN KEY (conversationId) REFERENCES conversations(id) ON DELETE CASCADE,
+  FOREIGN KEY (senderId) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS notifications (
@@ -87,6 +98,8 @@ CREATE INDEX IF NOT EXISTS idx_properties_city ON properties(city);
 CREATE INDEX IF NOT EXISTS idx_applications_property ON applications(propertyId);
 CREATE INDEX IF NOT EXISTS idx_applications_tenant ON applications(tenantId);
 CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(userId);
-CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(senderId);
-CREATE INDEX IF NOT EXISTS idx_messages_receiver ON messages(receiverId);
+CREATE INDEX IF NOT EXISTS idx_conversations_property ON conversations(propertyId);
+CREATE INDEX IF NOT EXISTS idx_conversations_landlord ON conversations(landlordId);
+CREATE INDEX IF NOT EXISTS idx_conversations_tenant ON conversations(tenantId);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversationId);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(userId);

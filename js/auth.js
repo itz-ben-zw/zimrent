@@ -90,7 +90,11 @@ async function handleLogin(e) {
     }
 
     loginUser(data);
-    window.location.href = 'dashboard.html';
+    if (data.user.role === 'tenant') {
+      window.location.href = 'listings.html';
+    } else {
+      window.location.href = 'dashboard.html';
+    }
   } catch (err) {
     showError('Network error. Please try again.');
   }
@@ -145,7 +149,11 @@ async function handleRegister(e) {
     }
 
     loginUser(data);
-    window.location.href = 'dashboard.html';
+    if (data.user.role === 'tenant') {
+      window.location.href = 'listings.html';
+    } else {
+      window.location.href = 'dashboard.html';
+    }
   } catch (err) {
     showError('Network error. Please try again.');
   }

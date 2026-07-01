@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat — ZimRent</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">Zim<span>Rent</span></a>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="listings.html">Browse</a></li>
+            <li><a href="conversations.html" class="active">Messages</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+        </ul>
+        <button class="menu-toggle">☰</button>
+    </nav>
+
+    <div class="container" style="max-width:900px; margin-top:1rem;">
+        <div style="margin:1rem 0; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h1 id="chat-title">Chat</h1>
+                <p id="chat-subtitle" style="color:var(--text-muted); font-size:0.9rem;">Loading...</p>
+            </div>
+            <a href="conversations.html" class="btn btn-outline">← Back</a>
+        </div>
+
+        <div class="sidebar" style="padding:0; overflow:hidden; display:flex; flex-direction:column; height:70vh;">
+            <div id="messages-list" style="flex:1; overflow-y:auto; padding:1rem; background:#f9f9f9;">
+                <div class="empty-state">
+                    <div class="icon"><i class="fas fa-comments" style="color:#ccc;"></i></div>
+                    <p>Loading messages...</p>
+                </div>
+            </div>
+
+            <div style="padding:1rem; border-top:1px solid var(--border); background:white;">
+                <form id="message-form" style="display:flex; gap:0.8rem;">
+                    <input type="text" id="message-input" placeholder="Type a message..." style="flex:1; padding:0.8rem; border:1px solid var(--border); border-radius:8px; font-family:inherit;" required>
+                    <button type="submit" class="btn btn-primary">Send</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer" style="margin-top:2rem;">
+        <p style="font-weight:700; font-size:1.1rem;">Zim<span style="color:var(--secondary);">Rent</span></p>
+        <p style="color:#aaa; font-size:0.85rem; margin-top:0.5rem;">© 2025 ZimRent. Built for Zimbabwe.</p>
+    </footer>
+
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (!requireLogin()) return;
+
+        const convId = sessionStorage.getItem('current_conversation_id');
+        if (!convId) {
+            window.location.href = 'conversations.html';
+            return;
+        }
+
+        await loadMessages(convId);
+        setupPolling(convId);
+    });
+
+    async function loadMessages(convId) {
+        const headers = { 'Content-Type': 'application/json' };
+        const session = getSession ? getSession() : null;
+        if (session && session.token) headers['Authorization'] = 'Bearer ' + session.token;
+
+        try {
+            const res = await fetch(`/api/conversations/${convId}/messages`, { headers });
+            const data = await res.json();
+            renderMessages(data.messages || []);
+        } catch (err) {
+            console.error('Failed to load messages:', err);
+        }
+    }
+
+    function renderMessages(messages) {
+        const container = document.getElementById('messages-list');
+        if (messages.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon"><i class="fas fa-comment-slash" style="color:#ccc;"></i></div>
+                    <p>No messages yet. Say hello!</p>
+                </div>`;
+            return;
+        }
+
+        container.innerHTML = messages.map(m => `
+            <div style="display:flex; margin-bottom:1rem; justify-content:${m.senderId === (getSession()?.user?.id) ? 'flex-end' : 'flex-start'};">
+                <div style="max-width:70%; padding:0.8rem 1rem; border-radius:16px; background:${m.senderId === (getSession()?.user?.id) ? 'var(--primary)' : 'white'}; color:${m.senderId === (getSession()?.user?.id) ? 'white' : 'var(--text-dark)'}; box-shadow:0 1px 2px rgba(0,0,0,0.1);">
+                    <div style="font-size:0.8rem; font-weight:600; margin-bottom:0.2rem; opacity:0.8;">${escapeHtml(m.senderName)}</div>
+                    <div>${escapeHtml(m.text)}</div>
+                    <div style="font-size:0.75rem; opacity:0.7; margin-top:0.3rem; text-align:right;">
+                        ${new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function setupPolling(convId) {
+        setInterval(() => loadMessages(convId), 5000);
+    }
+
+    document.getElementById('message-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = document.getElementById('message-input');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const convId = sessionStorage.getItem('current_conversation_id');
+        const headers = { 'Content-Type': 'application/json' };
+        const session = getSession ? getSession() : null;
+        if (session && session.token) headers['Authorization'] = 'Bearer ' + session.token;
+
+        try {
+            const res = await fetch(`/api/conversations/${convId}/messages`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ text })
+            });
+            if (res.ok) {
+                input.value = '';
+                loadMessages(convId);
+            }
+        } catch (err) {
+            alert('Failed to send message');
+        }
+    });
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    </script>
+</body>
+</html>

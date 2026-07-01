@@ -14,6 +14,7 @@ const propertyRoutes = require('./routes/properties');
 const applicationRoutes = require('./routes/applications');
 const favoriteRoutes = require('./routes/favorites');
 const messageRoutes = require('./routes/messages');
+const conversationRoutes = require('./routes/conversations');
 const adminRoutes = require('./routes/admin');
 
 const app = express();
@@ -44,6 +45,7 @@ app.use('/api/properties', propertyRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/conversations', conversationRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Serve static frontend files
@@ -76,7 +78,9 @@ async function initializeApp() {
   
   // Create sample landlord if none exist
   const propertyCount = db.prepare('SELECT COUNT(*) as count FROM properties').get();
-  if (propertyCount.count === 0) {
+  const propCount = propertyCount ? (propertyCount.count ?? propertyCount['COUNT(*)'] ?? 0) : 0;
+  console.log('DB status: properties =', propCount);
+  if (!propCount) {
     const landlordEmail = 'landlord@zimrent.com';
     let landlord = db.prepare('SELECT id FROM users WHERE email = ?').get(landlordEmail);
     

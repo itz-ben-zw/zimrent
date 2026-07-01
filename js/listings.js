@@ -260,8 +260,8 @@ const PROPERTY_TYPES = ['House', 'Apartment', 'Townhouse', 'Cottage', 'Stand', '
 
 async function fetchListingsFromAPI() {
   const headers = { 'Content-Type': 'application/json' };
-  const session = getCurrentUser ? getCurrentUser() : null;
-  if (session) headers['Authorization'] = 'Bearer ' + session;
+  const session = getSession ? getSession() : null;
+  if (session && session.token) headers['Authorization'] = 'Bearer ' + session.token;
   
   const res = await fetch('/api/properties', { headers });
   if (!res.ok) throw new Error('Failed to fetch listings');

@@ -11,8 +11,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   try {
     const headers = { 'Content-Type': 'application/json' };
-    const session = getCurrentUser ? getCurrentUser() : null;
-    if (session) headers['Authorization'] = 'Bearer ' + session;
+    const session = getSession ? getSession() : null;
+    if (session && session.token) headers['Authorization'] = 'Bearer ' + session.token;
 
     const res = await fetch(`/api/properties/${listingId}`, { headers });
     if (!res.ok) throw new Error('Property not found');
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('breadcrumb-title').textContent = p.title;
     document.getElementById('detail-title').textContent = p.title;
-    document.getElementById('detail-location').textContent = '📍 ' + p.city + ', ' + p.suburb;
+    document.getElementById('detail-location').innerHTML = '<i class="fas fa-map-marker-alt" style="color:var(--text-muted);"></i> ' + escapeHtml(p.city) + ', ' + escapeHtml(p.suburb);
     document.getElementById('detail-price').innerHTML = '<span style="font-weight:700; color:var(--primary); font-size:1.3rem;">' + p.currency + ' ' + p.price.toLocaleString() + '</span><span style="color:var(--text-muted);">/month</span>';
     document.getElementById('detail-description').textContent = p.description || 'No description provided.';
 
@@ -81,9 +81,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     contact.innerHTML = contactHTML;
 
-    // Application button for tenants
+    // Contact buttons for tenants
     if (session && session.user && session.user.role === 'tenant') {
-      contactHTML += '<button id="apply-btn" class="btn btn-success btn-lg" style="width:100%; margin-top:1rem;">Apply for This Property</button>';
+      contactHTML += `
+        <button id="apply-btn" class="btn btn-success btn-lg" style="width:100%; margin-top:1rem;">Apply for This Property</button>
+        <button id="message-btn" class="btn btn-outline btn-lg" style="width:100%; margin-top:0.8rem;">Message Landlord</button>
+      `;
       contact.innerHTML = contactHTML;
 
       document.getElementById('apply-btn').addEventListener('click', async () => {
@@ -103,6 +106,27 @@ document.addEventListener('DOMContentLoaded', async () => {
           alert('Application submitted successfully!');
         } catch (err) {
           alert('Error submitting application: ' + err.message);
+        }
+      });
+
+      document.getElementById('message-btn').addEventListener('click', async () => {
+        const reply = prompt('Send a message to the landlord (optional):', '');
+        if (reply === null) return;
+        try {
+          const convRes = await fetch('/api/conversations', {
+            method: 'POST',
+            headers: { ...headers, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ propertyId: p.id, message: reply })
+          });
+          const convData = await convRes.json();
+          if (!convRes.ok) {
+            alert(convData.error || 'Failed to open conversation');
+            return;
+          }
+          sessionStorage.setItem('current_conversation_id', convData.conversation.id);
+          window.location.href = 'chat.html';
+        } catch (err) {
+          alert('Error opening conversation: ' + err.message);
         }
       });
     }

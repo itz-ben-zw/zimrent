@@ -124,8 +124,8 @@
     </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/auth.js?v=2"></script>
+    <script src="js/app.js?v=2"></script>
     <script>
         function searchFromHero() {
             const city = document.getElementById('hero-city').value.trim();
@@ -141,8 +141,8 @@
         
         async function initHomePage() {
             const headers = { 'Content-Type': 'application/json' };
-            const session = getCurrentUser ? getCurrentUser() : null;
-            if (session) headers['Authorization'] = 'Bearer ' + session;
+            const session = getSession ? getSession() : null;
+            if (session && session.token) headers['Authorization'] = 'Bearer ' + session.token;
             
             let listings = [];
             try {
