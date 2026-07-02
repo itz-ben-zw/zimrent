@@ -73,12 +73,16 @@
 
             <!-- Social / Google Login -->
             <div class="auth-panel" id="panel-social" style="display:none; text-align:center;">
-                <p style="color:var(--text-muted); margin-bottom:1.5rem;">Sign in with your social account</p>
-                <button id="google-login-btn" class="btn btn-lg" style="width:100%; background:#fff; border:1px solid var(--border); color:var(--text-dark); display:flex; align-items:center; justify-content:center; gap:0.8rem; padding:0.8rem;" onclick="handleGoogleLogin()">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:22px; height:22px;" alt="Google">
-                    Continue with Google
-                </button>
-                <p style="font-size:0.8rem; color:var(--text-muted); margin-top:1rem;">Apple Sign-In coming soon</p>
+                <p style="color:var(--text-muted); margin-bottom:1.5rem;">Social sign-in is not configured yet.</p>
+                <div style="background:#f8f9fa; border:1px dashed var(--border); border-radius:12px; padding:1.2rem; text-align:left; font-size:0.9rem; color:var(--text-muted);">
+                    <div style="font-weight:700; color:var(--text-dark); margin-bottom:0.4rem;">How to enable Google Sign-In</div>
+                    <ol style="margin:0; padding-left:1.2rem; line-height:1.7;">
+                        <li>Create a Google OAuth 2.0 Client ID in Google Cloud Console.</li>
+                        <li>Add your Render domain to <strong>Authorized JavaScript origins</strong>.</li>
+                        <li>Replace <code>YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com</code> in <code>js/auth.js</code>.</li>
+                    </ol>
+                </div>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-top:1rem;">Meanwhile, use Email or Phone login.</p>
             </div>
             
             <p style="text-align:center; margin-top:1.5rem; color:var(--text-muted); font-size:0.9rem;">
