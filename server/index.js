@@ -85,13 +85,9 @@ async function initializeApp() {
   
   // Create sample landlord if none exist
   try {
-    const propertyCount = db.prepare('SELECT COUNT(*) as count FROM properties').get();
-    const propCount = propertyCount ? (propertyCount.count ?? propertyCount['COUNT(*)'] ?? 0) : 0;
-    console.log('DB status: properties =', propCount);
-    if (!propCount) {
     const landlordEmail = 'landlord@zimrent.com';
     let landlord = db.prepare('SELECT id FROM users WHERE email = ?').get(landlordEmail);
-    
+
     if (!landlord) {
       const passwordHash = bcrypt.hashSync('landlord123', 10);
       db.prepare('INSERT INTO users (id, fullName, email, passwordHash, role, phone) VALUES (?, ?, ?, ?, ?, ?)').run(
@@ -100,37 +96,41 @@ async function initializeApp() {
       landlord = db.prepare('SELECT id FROM users WHERE email = ?').get(landlordEmail);
     }
 
-    const sampleProperties = [
-      {
-        title: 'Modern 3-Bed House in Borrowdale',
-        description: 'Beautiful family home with solar power, borehole water, and a spacious garden. Located in a quiet cul-de-sac in Borrowdale.',
-        city: 'Harare', suburb: 'Borrowdale', type: 'House', bedrooms: 3, bathrooms: 2,
-        price: 850, currency: 'USD', solar: 1, borehole: 1, fenced: 1
-      },
-      {
-        title: 'Luxury Apartment with City View',
-        description: 'Stunning 2-bed apartment in Avondale with modern finishes, secure parking, and backup power.',
-        city: 'Harare', suburb: 'Avondale', type: 'Apartment', bedrooms: 2, bathrooms: 2,
-        price: 650, currency: 'USD', solar: 1, borehole: 0, fenced: 0
-      },
-      {
-        title: 'Family Townhouse in Burnside',
-        description: 'Spacious 4-bed townhouse with borehole water and a large yard. Perfect for families.',
-        city: 'Bulawayo', suburb: 'Burnside', type: 'Townhouse', bedrooms: 4, bathrooms: 2,
-        price: 500, currency: 'USD', solar: 1, borehole: 1, fenced: 1
-      }
-    ];
+    const sampleMarker = db.prepare('SELECT id FROM properties WHERE title = ?').get('Modern 3-Bed House in Borrowdale');
+    if (!sampleMarker) {
+      const sampleProperties = [
+        {
+          title: 'Modern 3-Bed House in Borrowdale',
+          description: 'Beautiful family home with solar power, borehole water, and a spacious garden. Located in a quiet cul-de-sac in Borrowdale.',
+          city: 'Harare', suburb: 'Borrowdale', type: 'House', bedrooms: 3, bathrooms: 2,
+          price: 850, currency: 'USD', solar: 1, borehole: 1, fenced: 1
+        },
+        {
+          title: 'Luxury Apartment with City View',
+          description: 'Stunning 2-bed apartment in Avondale with modern finishes, secure parking, and backup power.',
+          city: 'Harare', suburb: 'Avondale', type: 'Apartment', bedrooms: 2, bathrooms: 2,
+          price: 650, currency: 'USD', solar: 1, borehole: 0, fenced: 0
+        },
+        {
+          title: 'Family Townhouse in Burnside',
+          description: 'Spacious 4-bed townhouse with borehole water and a large yard. Perfect for families.',
+          city: 'Bulawayo', suburb: 'Burnside', type: 'Townhouse', bedrooms: 4, bathrooms: 2,
+          price: 500, currency: 'USD', solar: 1, borehole: 1, fenced: 1
+        }
+      ];
 
-    const insert = db.prepare(`INSERT INTO properties (id, landlordId, title, description, city, suburb, type, bedrooms, bathrooms, price, currency, solar, borehole, fenced, images, phone, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-    
-    for (const prop of sampleProperties) {
-      insert.run(
-        uuidv4(), landlord.id, prop.title, prop.description, prop.city, prop.suburb, prop.type,
-        prop.bedrooms, prop.bathrooms, prop.price, prop.currency, prop.solar, prop.borehole, prop.fenced,
-        '[]', '+263 00 000 0000', landlordEmail
-      );
-    }
+      const insert = db.prepare(`INSERT INTO properties (id, landlordId, title, description, city, suburb, type, bedrooms, bathrooms, price, currency, solar, borehole, fenced, images, phone, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+      
+      for (const prop of sampleProperties) {
+        insert.run(
+          uuidv4(), landlord.id, prop.title, prop.description, prop.city, prop.suburb, prop.type,
+          prop.bedrooms, prop.bathrooms, prop.price, prop.currency, prop.solar, prop.borehole, prop.fenced,
+          '[]', '+263 00 000 0000', landlordEmail
+        );
+      }
       console.log('✓ Sample properties created');
+    } else {
+      console.log('✓ Sample properties already exist');
     }
   } catch (err) {
     console.warn('Skipped sample data creation:', err.message);

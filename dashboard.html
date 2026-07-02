@@ -105,5 +105,13 @@
     <script src="js/auth.js?v=3"></script>
     <script src="js/app.js?v=3"></script>
     <script src="js/dashboard.js?v=3"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = getCurrentUser();
+      if (!user || user.role !== 'landlord') {
+        window.location.href = user ? 'listings.html' : 'login.html';
+      }
+    });
+    </script>
 </body>
 </html>
