@@ -7,7 +7,7 @@ const morgan = require('morgan');
 const { v4: uuidv4 } = require('uuid');
 const { initDb, getDb } = require('./database/db');
 const runMigration = require('./database/migrate');
-const { authLimiter, apiLimiter } = require('./middleware/rateLimiter');
+const { authLimiter, registerLimiter, apiLimiter } = require('./middleware/rateLimiter');
 
 const authRoutes = require('./routes/auth');
 const propertyRoutes = require('./routes/properties');
@@ -36,6 +36,9 @@ app.use(cors(corsOptions));
 app.set('trust proxy', 1);
 
 // Rate limiting
+// Registration gets its own, more generous limiter (see rateLimiter.js for why),
+// applied first so it takes precedence over the stricter general auth limiter.
+app.use('/api/auth/register', registerLimiter);
 app.use('/api/auth', authLimiter);
 app.use('/api', apiLimiter);
 

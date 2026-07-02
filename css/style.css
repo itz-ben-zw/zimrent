@@ -5,6 +5,10 @@
 
 /* CSS Variables */
 :root {
+    /* Site is light-themed only. Without this, browsers in system dark mode
+       auto-apply dark UA styles to inputs/selects/scrollbars, which clashes
+       with our explicit light colors and breaks form control rendering. */
+    color-scheme: light;
     --primary: #0f4c81;
     --primary-dark: #0a365c;
     --secondary: #f39c12;
