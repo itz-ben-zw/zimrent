@@ -214,50 +214,65 @@ function handleGoogleLogin() {
     showError('Google Sign-In is not configured yet. Please use Email or Phone login.');
     return;
   }
-  if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
-    const tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: GOOGLE_CLIENT_ID,
-      scope: 'email profile',
-      callback: (response) => {
-        if (response.access_token) {
-          // Fetch user info from Google
-          fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-            headers: { Authorization: 'Bearer ' + response.access_token }
-          })
-          .then(r => r.json())
-          .then(googleUser => {
-            // Now call our backend
-            fetch(`${API}/google`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                email: googleUser.email,
-                fullName: googleUser.name,
-                googleId: googleUser.sub,
-                profileImage: googleUser.picture
-              })
-            })
-            .then(r => r.json())
-            .then(data => {
-              if (data.error) {
-                showError(data.error);
-                return;
-              }
-              loginUser(data);
-              if (data.user.role === 'tenant') {
-                window.location.href = 'listings.html';
-              } else {
-                window.location.href = 'dashboard.html';
-              }
-            });
-          });
-        }
-      }
-    });
-    tokenClient.requestAccessToken();
-  } else {
+  if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
     showError('Google Sign-In is loading. Please try again in a moment.');
+    return;
   }
+
+  const btn = document.getElementById('google-login-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Signing in with Google...';
+  }
+
+  const tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: 'email profile',
+    callback: (response) => {
+      if (!response.access_token) {
+        showError('Google sign-in was cancelled or failed. Please try again.');
+        if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
+        return;
+      }
+      fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: 'Bearer ' + response.access_token }
+      })
+      .then(r => r.json())
+      .then(googleUser => {
+        return fetch(`${API}/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: googleUser.email,
+            fullName: googleUser.name,
+            googleId: googleUser.sub,
+            profileImage: googleUser.picture
+          })
+        });
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) {
+          showError(data.error || 'Google sign-in failed.');
+          if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
+          return;
+        }
+        loginUser(data);
+        if (data.user.role === 'tenant') {
+          window.location.href = 'listings.html';
+        } else {
+          window.location.href = 'dashboard.html';
+        }
+      })
+      .catch(err => {
+        showError('Network error during Google sign-in. Please try again.');
+        console.error('Google login error:', err);
+        if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
+      });
+    }
+  });
+
+  tokenClient.requestAccessToken();
 }
 
 function initRegisterPage() {
