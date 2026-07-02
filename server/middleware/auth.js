@@ -73,4 +73,20 @@ function authorize(...roles) {
   };
 }
 
-module.exports = { authenticate, optionalAuth, authorize };
+function csrfProtection(req, res, next) {
+  const method = req.method.toLowerCase();
+  if (['get', 'head', 'options'].includes(method)) {
+    return next();
+  }
+
+  const headerToken = req.headers['x-csrf-token'];
+  const cookieToken = req.cookies && req.cookies['csrf_token'];
+
+  if (!headerToken || !cookieToken || headerToken !== cookieToken) {
+    return res.status(403).json({ error: 'Invalid CSRF token' });
+  }
+
+  next();
+}
+
+module.exports = { authenticate, optionalAuth, authorize, csrfProtection };
