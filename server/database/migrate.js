@@ -16,7 +16,7 @@ async function runMigration() {
   }
 
   // Verify expected tables exist; if not, attempt per-statement fallback
-  const requiredTables = ['users', 'properties', 'applications', 'favorites', 'conversations', 'messages', 'notifications'];
+  const requiredTables = ['users', 'properties', 'applications', 'favorites', 'conversations', 'messages', 'notifications', 'refresh_tokens', 'email_verifications', 'password_resets', 'csrf_tokens'];
   const missing = requiredTables.filter(name => {
     const row = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='" + name + "'");
     return !row || row.length === 0;

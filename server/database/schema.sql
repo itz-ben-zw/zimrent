@@ -107,3 +107,44 @@ CREATE INDEX IF NOT EXISTS idx_conversations_landlord ON conversations(landlordI
 CREATE INDEX IF NOT EXISTS idx_conversations_tenant ON conversations(tenantId);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversationId);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(userId);
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  id TEXT PRIMARY KEY,
+  userId TEXT NOT NULL,
+  token TEXT NOT NULL UNIQUE,
+  userAgent TEXT DEFAULT '',
+  ip TEXT DEFAULT '',
+  expiresAt TEXT NOT NULL,
+  revoked INTEGER NOT NULL DEFAULT 0,
+  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS email_verifications (
+  id TEXT PRIMARY KEY,
+  userId TEXT NOT NULL,
+  token TEXT NOT NULL UNIQUE,
+  expiresAt TEXT NOT NULL,
+  verified INTEGER NOT NULL DEFAULT 0,
+  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS password_resets (
+  id TEXT PRIMARY KEY,
+  userId TEXT NOT NULL,
+  token TEXT NOT NULL UNIQUE,
+  expiresAt TEXT NOT NULL,
+  used INTEGER NOT NULL DEFAULT 0,
+  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS csrf_tokens (
+  id TEXT PRIMARY KEY,
+  userId TEXT NOT NULL,
+  token TEXT NOT NULL UNIQUE,
+  expiresAt TEXT NOT NULL,
+  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+);
