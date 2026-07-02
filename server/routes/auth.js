@@ -8,20 +8,6 @@ const upload = require('../middleware/upload');
 
 const router = express.Router();
 
-// CSRF protection for state-changing auth routes
-router.use((req, res, next) => {
-  const method = req.method.toLowerCase();
-  if (['get', 'head', 'options'].includes(method)) {
-    return next();
-  }
-  const headerToken = req.headers['x-csrf-token'];
-  const cookieToken = req.cookies && req.cookies['csrf_token'];
-  if (!headerToken || !cookieToken || headerToken !== cookieToken) {
-    return res.status(403).json({ error: 'Invalid CSRF token' });
-  }
-  next();
-});
-
 // In-memory OTP store (in production, use database/Redis)
 const otpStore = new Map();
 function generateOTP() { return Math.floor(100000 + Math.random() * 900000).toString(); }
