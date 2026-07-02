@@ -12,6 +12,16 @@ const router = express.Router();
 const otpStore = new Map();
 function generateOTP() { return Math.floor(100000 + Math.random() * 900000).toString(); }
 
+function jwtExpiresIn() {
+  const raw = process.env.JWT_EXPIRES_IN;
+  if (!raw) return '24h';
+  const trimmed = String(raw).trim();
+  if (/^[0-9]+$/.test(trimmed)) {
+    return parseInt(trimmed, 10);
+  }
+  return trimmed;
+}
+
 // Helper: generate user response
 function userResponse(user) {
   return {
@@ -86,7 +96,7 @@ router.post('/register', upload.single('profileImage'), (req, res) => {
   );
 
   // Generate token
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
 
   res.status(201).json({ token, user: userResponse(user) });
 });
@@ -110,7 +120,7 @@ router.post('/login', (req, res) => {
     return res.status(401).json({ error: 'Incorrect password' });
   }
 
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
 
   res.json({ token, user: userResponse(user) });
 });
@@ -144,7 +154,7 @@ router.post('/google', (req, res) => {
     }
   }
 
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
   res.json({ token, user: userResponse(user) });
 });
 
@@ -270,7 +280,7 @@ router.post('/forgot-password', (req, res) => {
     return res.json({ message: 'If the email exists, a reset link has been sent' });
   }
 
-  const resetToken = jwt.sign({ userId: user.id, purpose: 'password-reset' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  const resetToken = jwt.sign({ userId: user.id, purpose: 'password-reset' }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
   db.prepare('UPDATE users SET updatedAt = datetime(\'now\') WHERE id = ?').run(user.id);
 
   res.json({ message: 'If the email exists, a reset link has been sent', resetToken });
