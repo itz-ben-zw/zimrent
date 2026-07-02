@@ -209,10 +209,14 @@ function resetPhoneLogin() {
 
 // --- Google Sign-In ---
 function handleGoogleLogin() {
-  // Use Google Identity Services (GIS) credentialless flow
+  const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+  if (GOOGLE_CLIENT_ID.includes('YOUR_GOOGLE_CLIENT_ID')) {
+    showError('Google Sign-In is not configured yet. Please use Email or Phone login.');
+    return;
+  }
   if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
     const tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+      client_id: GOOGLE_CLIENT_ID,
       scope: 'email profile',
       callback: (response) => {
         if (response.access_token) {
