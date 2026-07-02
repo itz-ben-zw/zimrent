@@ -7,8 +7,12 @@ CREATE TABLE IF NOT EXISTS users (
   passwordHash TEXT NOT NULL,
   role TEXT NOT NULL CHECK(role IN ('tenant', 'landlord', 'admin')) DEFAULT 'tenant',
   phone TEXT DEFAULT '',
+  username TEXT DEFAULT '' UNIQUE,
   profileImage TEXT DEFAULT '',
   emailVerified INTEGER NOT NULL DEFAULT 0,
+  phoneVerified INTEGER NOT NULL DEFAULT 0,
+  authProvider TEXT DEFAULT 'email' CHECK(authProvider IN ('email','google','phone')),
+  providerId TEXT DEFAULT '',
   createdAt TEXT NOT NULL DEFAULT (datetime('now')),
   updatedAt TEXT NOT NULL DEFAULT (datetime('now'))
 );

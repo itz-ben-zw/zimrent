@@ -37,8 +37,8 @@ function getCurrentUser() {
   return session ? session.user : null;
 }
 
-function loginUser(user) {
-  saveSession({ token: user.token, user });
+function loginUser(data) {
+  saveSession({ token: data.token, user: data.user });
 }
 
 function logoutUser() {
@@ -59,12 +59,33 @@ function requireLogin() {
   return true;
 }
 
+function getCurrentUserId() {
+  const user = getCurrentUser();
+  return user ? user.id : null;
+}
+
 // --- Auth Event Handlers ---
 function initLoginPage() {
   const form = document.getElementById('login-form');
   if (form) {
     form.addEventListener('submit', handleLogin);
   }
+
+  // Auth tab switching
+  document.querySelectorAll('.auth-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.auth-tab').forEach(b => {
+        b.style.background = 'white';
+        b.style.color = 'var(--text-dark)';
+        b.style.border = '1px solid var(--border)';
+      });
+      document.querySelectorAll('.auth-panel').forEach(p => p.style.display = 'none');
+      btn.style.background = 'var(--primary)';
+      btn.style.color = 'white';
+      btn.style.border = 'none';
+      document.getElementById('panel-' + btn.dataset.tab).style.display = 'block';
+    });
+  });
 
   if (isLoggedIn()) {
     window.location.href = 'dashboard.html';
@@ -100,10 +121,155 @@ async function handleLogin(e) {
   }
 }
 
+// --- Phone OTP Login ---
+async function sendOTP() {
+  const phone = document.getElementById('login-phone').value.trim();
+  if (!phone) {
+    showError('Please enter your phone number.');
+    return;
+  }
+
+  const btn = document.getElementById('send-otp-btn');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+
+  try {
+    const res = await fetch(`${API}/phone/send-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone })
+    });
+    const data = await res.json();
+    btn.disabled = false;
+    btn.textContent = 'Send OTP';
+
+    if (!res.ok) {
+      showError(data.error || 'Failed to send OTP');
+      return;
+    }
+
+    document.getElementById('phone-step-1').style.display = 'none';
+    document.getElementById('phone-step-2').style.display = 'block';
+    document.getElementById('otp-phone-display').textContent = phone;
+    if (data.debug) {
+      console.log('📱 OTP for debugging:', data.debug);
+      document.getElementById('login-otp').placeholder = `Debug: ${data.debug}`;
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Send OTP';
+    showError('Network error. Please try again.');
+  }
+}
+
+async function verifyOTP() {
+  const phone = document.getElementById('otp-phone-display').textContent;
+  const otp = document.getElementById('login-otp').value.trim();
+  if (!otp) {
+    showError('Please enter the OTP code.');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/phone/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, otp })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showError(data.error || 'Verification failed');
+      return;
+    }
+
+    loginUser(data);
+    if (data.user.role === 'tenant') {
+      window.location.href = 'listings.html';
+    } else {
+      window.location.href = 'dashboard.html';
+    }
+  } catch (err) {
+    showError('Network error. Please try again.');
+  }
+}
+
+function resetPhoneLogin() {
+  document.getElementById('phone-step-1').style.display = 'block';
+  document.getElementById('phone-step-2').style.display = 'none';
+  document.getElementById('login-otp').value = '';
+  document.getElementById('login-otp').placeholder = '6-digit code';
+  hideError();
+}
+
+// --- Google Sign-In ---
+function handleGoogleLogin() {
+  // Use Google Identity Services (GIS) credentialless flow
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+    const tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+      scope: 'email profile',
+      callback: (response) => {
+        if (response.access_token) {
+          // Fetch user info from Google
+          fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: 'Bearer ' + response.access_token }
+          })
+          .then(r => r.json())
+          .then(googleUser => {
+            // Now call our backend
+            fetch(`${API}/google`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: googleUser.email,
+                fullName: googleUser.name,
+                googleId: googleUser.sub,
+                profileImage: googleUser.picture
+              })
+            })
+            .then(r => r.json())
+            .then(data => {
+              if (data.error) {
+                showError(data.error);
+                return;
+              }
+              loginUser(data);
+              if (data.user.role === 'tenant') {
+                window.location.href = 'listings.html';
+              } else {
+                window.location.href = 'dashboard.html';
+              }
+            });
+          });
+        }
+      }
+    });
+    tokenClient.requestAccessToken();
+  } else {
+    showError('Google Sign-In is loading. Please try again in a moment.');
+  }
+}
+
 function initRegisterPage() {
   const form = document.getElementById('register-form');
   if (form) {
     form.addEventListener('submit', handleRegister);
+  }
+
+  // Profile picture preview
+  const picInput = document.getElementById('reg-pic-input');
+  if (picInput) {
+    picInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        document.getElementById('reg-pic-img').src = ev.target.result;
+        document.getElementById('reg-pic-img').style.display = 'block';
+        document.getElementById('reg-pic-placeholder').style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   if (isLoggedIn()) {
@@ -114,6 +280,7 @@ function initRegisterPage() {
 async function handleRegister(e) {
   e.preventDefault();
   const name = document.getElementById('reg-name').value.trim();
+  const username = document.getElementById('reg-username')?.value.trim() || '';
   const email = document.getElementById('reg-email').value.trim();
   const phone = document.getElementById('reg-phone').value.trim();
   const password = document.getElementById('reg-password').value;
@@ -136,10 +303,34 @@ async function handleRegister(e) {
   }
 
   try {
+    // Use FormData for file upload support
+    const picFile = document.getElementById('reg-pic-input')?.files?.[0];
+    
+    const headers = { 'Content-Type': 'application/json' };
+    const body = JSON.stringify({ fullName: name, username, email, phone, password, role });
+
+    // If profile image is selected, include it
+    let finalBody, finalHeaders;
+    if (picFile) {
+      const formData = new FormData();
+      formData.append('fullName', name);
+      formData.append('username', username);
+      formData.append('email', email);
+      formData.append('phone', phone);
+      formData.append('password', password);
+      formData.append('role', role);
+      formData.append('profileImage', picFile);
+      finalBody = formData;
+      finalHeaders = {}; // Content-Type set by FormData
+    } else {
+      finalBody = JSON.stringify({ fullName: name, username, email, phone, password, role });
+      finalHeaders = { 'Content-Type': 'application/json' };
+    }
+
     const res = await fetch(`${API}/register`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fullName: name, email, phone, password, role })
+      headers: picFile ? undefined : { 'Content-Type': 'application/json' },
+      body: finalBody
     });
 
     const data = await res.json();
@@ -161,10 +352,19 @@ async function handleRegister(e) {
 
 function showError(message) {
   const errorEl = document.getElementById('auth-error');
+  const successEl = document.getElementById('auth-success');
+  if (successEl) successEl.style.display = 'none';
   if (errorEl) {
     errorEl.textContent = message;
     errorEl.style.display = 'block';
   }
+}
+
+function hideError() {
+  const errorEl = document.getElementById('auth-error');
+  if (errorEl) errorEl.style.display = 'none';
+  const successEl = document.getElementById('auth-success');
+  if (successEl) successEl.style.display = 'none';
 }
 
 function logout() {
@@ -179,20 +379,42 @@ function updateNavbar() {
   const registerLink = document.getElementById('nav-register');
   const logoutLink = document.getElementById('nav-logout');
   const userInfo = document.getElementById('nav-user-info');
+  const messagesLink = document.getElementById('nav-messages');
+  const profileLink = document.getElementById('nav-profile');
 
   if (user) {
     if (loginLink) loginLink.style.display = 'none';
     if (registerLink) registerLink.style.display = 'none';
     if (logoutLink) logoutLink.style.display = 'inline-block';
+    if (messagesLink) messagesLink.style.display = 'inline-block';
+    if (profileLink) profileLink.style.display = 'inline-block';
     if (userInfo) {
-      userInfo.style.display = 'inline-block';
-      userInfo.textContent = user.fullName || user.email;
+      userInfo.style.display = 'inline-flex';
+      userInfo.style.alignItems = 'center';
+      userInfo.style.gap = '6px';
+      userInfo.style.cursor = 'pointer';
+      
+      const displayName = user.username || user.fullName || user.email;
+      const pic = user.profileImage;
+      
+      if (pic) {
+        userInfo.innerHTML = `<img src="${pic}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);" alt="Profile"> <span>${displayName}</span>`;
+      } else {
+        userInfo.innerHTML = `<i class="fas fa-user-circle" style="font-size:1.3rem; color:var(--primary);"></i> <span>${displayName}</span>`;
+      }
+      
+      userInfo.onclick = () => { window.location.href = 'profile.html'; };
     }
   } else {
     if (loginLink) loginLink.style.display = 'inline-block';
     if (registerLink) registerLink.style.display = 'inline-block';
     if (logoutLink) logoutLink.style.display = 'none';
-    if (userInfo) userInfo.style.display = 'none';
+    if (messagesLink) messagesLink.style.display = 'none';
+    if (profileLink) profileLink.style.display = 'none';
+    if (userInfo) {
+      userInfo.style.display = 'none';
+      userInfo.onclick = null;
+    }
   }
 }
 

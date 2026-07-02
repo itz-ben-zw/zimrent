@@ -51,6 +51,10 @@
                     <input type="email" id="profile-email" disabled>
                 </div>
                 <div class="form-group">
+                    <label for="profile-username">Username</label>
+                    <input type="text" id="profile-username" placeholder="johndoe" maxlength="30">
+                </div>
+                <div class="form-group">
                     <label for="profile-phone">Phone Number</label>
                     <input type="tel" id="profile-phone" placeholder="+263 77 000 0000">
                 </div>
@@ -86,6 +90,10 @@
         document.getElementById('profile-phone').value = user.phone || '';
         document.getElementById('profile-role').value = user.role === 'landlord' ? 'Landlord' : user.role === 'tenant' ? 'Tenant' : 'Admin';
 
+        // Username field
+        const usernameField = document.getElementById('profile-username');
+        if (usernameField) usernameField.value = user.username || '';
+
         if (user.profileImage) {
             document.getElementById('profile-pic-img').src = user.profileImage;
             document.getElementById('profile-pic-img').style.display = 'block';
@@ -106,7 +114,7 @@
             reader.readAsDataURL(file);
         });
 
-        // Save profile
+        // Save profile with real image upload
         document.getElementById('profile-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const errorEl = document.getElementById('auth-error');
@@ -114,38 +122,44 @@
             errorEl.style.display = 'none';
             successEl.style.display = 'none';
 
-            const headers = { 'Content-Type': 'application/json' };
-            if (session && session.token) headers['Authorization'] = 'Bearer ' + session.token;
+            const token = session.token;
+            const headers = { Authorization: 'Bearer ' + token };
 
-            const body = {
-                fullName: document.getElementById('profile-name').value.trim(),
-                phone: document.getElementById('profile-phone').value.trim()
-            };
+            const picFile = document.getElementById('profile-pic-upload').files[0];
+            const fullName = document.getElementById('profile-name').value.trim();
+            const phone = document.getElementById('profile-phone').value.trim();
+            const username = document.getElementById('profile-username')?.value.trim() || '';
+
+            let response;
+            if (picFile) {
+                const formData = new FormData();
+                formData.append('fullName', fullName);
+                formData.append('phone', phone);
+                formData.append('username', username);
+                formData.append('profileImage', picFile);
+                response = await fetch('/api/auth/profile', {
+                    method: 'PUT',
+                    headers: { Authorization: 'Bearer ' + token },
+                    body: formData
+                });
+            } else {
+                response = await fetch('/api/auth/profile', {
+                    method: 'PUT',
+                    headers: { ...headers, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fullName, phone, username })
+                });
+            }
 
             try {
-                const res = await fetch('/api/auth/profile', {
-                    method: 'PUT',
-                    headers,
-                    body: JSON.stringify(body)
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    session.user.fullName = data.user.fullName;
-                    session.user.phone = data.user.phone;
+                if (response.ok) {
+                    const data = await response.json();
+                    session.user = data.user;
                     sessionStorage.setItem('zimrent_session', JSON.stringify(session));
-                    
-                    // Also save profile image
-                    const pic = document.getElementById('profile-pic-img').src;
-                    if (pic && pic.startsWith('data:')) {
-                        session.user.profileImage = pic;
-                        sessionStorage.setItem('zimrent_session', JSON.stringify(session));
-                    }
-
                     successEl.textContent = 'Profile updated successfully!';
                     successEl.style.display = 'block';
                     updateNavbar();
                 } else {
-                    const err = await res.json();
+                    const err = await response.json();
                     errorEl.textContent = err.error || 'Failed to update profile';
                     errorEl.style.display = 'block';
                 }
