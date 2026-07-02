@@ -107,6 +107,9 @@ async function handleLogin(e) {
     const data = await res.json();
     if (!res.ok) {
       showError(data.error || 'Login failed');
+      if (data.error && data.error.includes('Too many')) {
+        console.warn('Rate-limited by backend:', data.error);
+      }
       return;
     }
 
@@ -178,7 +181,10 @@ async function verifyOTP() {
     });
     const data = await res.json();
     if (!res.ok) {
-      showError(data.error || 'Verification failed');
+      showError(data.error || 'Network error. Please try again.');
+      if (data.error && data.error.includes('Too many')) {
+        console.warn('Rate-limited by backend:', data.error);
+      }
       return;
     }
 
