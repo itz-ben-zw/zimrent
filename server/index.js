@@ -32,6 +32,9 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
+// Trust first proxy so rate limiter works behind Render's load balancer
+app.set('trust proxy', 1);
+
 // Rate limiting
 app.use('/api/auth', authLimiter);
 app.use('/api', apiLimiter);
