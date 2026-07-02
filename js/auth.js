@@ -209,8 +209,8 @@ function resetPhoneLogin() {
 
 // --- Google Sign-In ---
 function handleGoogleLogin() {
-  const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
-  if (GOOGLE_CLIENT_ID.includes('YOUR_GOOGLE_CLIENT_ID')) {
+  const GOOGLE_CLIENT_ID = '264173024062-vci0i2i5i75524gu8cnfpf79l48i241q.apps.googleusercontent.com';
+  if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes('YOUR_GOOGLE_CLIENT_ID')) {
     showError('Google Sign-In is not configured yet. Please use Email or Phone login.');
     return;
   }
