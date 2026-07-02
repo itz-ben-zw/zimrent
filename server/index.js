@@ -66,21 +66,26 @@ async function initializeApp() {
   // Auto-create admin only if ADMIN_EMAIL env var is set
   const adminEmail = process.env.ADMIN_EMAIL;
   if (adminEmail) {
-    const existingAdmin = db.prepare('SELECT id FROM users WHERE email = ?').get(adminEmail);
-    if (!existingAdmin) {
-      const passwordHash = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'admin123', 10);
-      db.prepare('INSERT INTO users (id, fullName, email, passwordHash, role, phone) VALUES (?, ?, ?, ?, ?, ?)').run(
-        uuidv4(), 'Admin', adminEmail, passwordHash, 'admin', '+263 77 000 0000'
-      );
-      console.log('✓ Admin created:', adminEmail);
+    try {
+      const existingAdmin = db.prepare('SELECT id FROM users WHERE email = ?').get(adminEmail);
+      if (!existingAdmin) {
+        const passwordHash = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'admin123', 10);
+        db.prepare('INSERT INTO users (id, fullName, email, passwordHash, role, phone) VALUES (?, ?, ?, ?, ?, ?)').run(
+          uuidv4(), 'Admin', adminEmail, passwordHash, 'admin', '+263 77 000 0000'
+        );
+        console.log('✓ Admin created:', adminEmail);
+      }
+    } catch (err) {
+      console.warn('Skipped admin creation:', err.message);
     }
   }
   
   // Create sample landlord if none exist
-  const propertyCount = db.prepare('SELECT COUNT(*) as count FROM properties').get();
-  const propCount = propertyCount ? (propertyCount.count ?? propertyCount['COUNT(*)'] ?? 0) : 0;
-  console.log('DB status: properties =', propCount);
-  if (!propCount) {
+  try {
+    const propertyCount = db.prepare('SELECT COUNT(*) as count FROM properties').get();
+    const propCount = propertyCount ? (propertyCount.count ?? propertyCount['COUNT(*)'] ?? 0) : 0;
+    console.log('DB status: properties =', propCount);
+    if (!propCount) {
     const landlordEmail = 'landlord@zimrent.com';
     let landlord = db.prepare('SELECT id FROM users WHERE email = ?').get(landlordEmail);
     
@@ -122,7 +127,10 @@ async function initializeApp() {
         '[]', '+263 71 234 5678', landlordEmail
       );
     }
-    console.log('✓ Sample properties created');
+      console.log('✓ Sample properties created');
+    }
+  } catch (err) {
+    console.warn('Skipped sample data creation:', err.message);
   }
 }
 
