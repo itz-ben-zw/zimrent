@@ -77,8 +77,9 @@ router.post('/register', upload.single('profileImage'), (req, res) => {
   // Hash password
   const passwordHash = bcrypt.hashSync(password, 10);
 
+  const id = uuidv4();
   const user = {
-    id: uuidv4(),
+    id,
     fullName,
     email,
     passwordHash,
@@ -95,11 +96,26 @@ router.post('/register', upload.single('profileImage'), (req, res) => {
     user.id, user.fullName, user.email, user.passwordHash, user.role, user.phone, user.username, user.profileImage, user.authProvider, user.providerId
   );
 
-  // Generate token
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
+  // Issue verification email token
+  const verifyToken = uuidv4();
+  const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  db.prepare('INSERT INTO email_verifications (id, userId, token, expiresAt) VALUES (?, ?, ?, ?)').run(uuidv4(), user.id, verifyToken, verifyExpires);
 
-  res.status(201).json({ token, user: userResponse(user) });
+  const accessToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
+  const refreshToken = issueRefreshToken(id, req);
+
+  res.status(201).json({ token: accessToken, refreshToken, verifyToken, user: userResponse(user) });
 });
+
+function issueRefreshToken(userId, req) {
+  const token = uuidv4();
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const db = getDb();
+  db.prepare('INSERT INTO refresh_tokens (id, userId, token, userAgent, ip, expiresAt) VALUES (?, ?, ?, ?, ?, ?)').run(
+    uuidv4(), userId, token, (req.headers['user-agent'] || '').substring(0, 255), (req.ip || req.socket.remoteAddress || '').substring(0, 64), expiresAt
+  );
+  return token;
+}
 
 // POST /api/auth/login
 router.post('/login', (req, res) => {
@@ -121,8 +137,9 @@ router.post('/login', (req, res) => {
   }
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
+  const refreshToken = issueRefreshToken(user.id, req);
 
-  res.json({ token, user: userResponse(user) });
+  res.json({ token, refreshToken, user: userResponse(user) });
 });
 
 // POST /api/auth/google - Google Sign-In
@@ -282,13 +299,40 @@ router.post('/phone/verify', (req, res) => {
     user.phoneVerified = 1;
   }
 
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
-  res.json({ token, user: userResponse(user) });
+  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
+  const refreshToken = issueRefreshToken(user.id, req);
+  res.json({ token, refreshToken, user: userResponse(user) });
 });
 
 // GET /api/auth/me
 router.get('/me', authenticate, (req, res) => {
   res.json({ user: req.user });
+});
+
+// POST /api/auth/refresh-token
+router.post('/refresh-token', (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    return res.status(400).json({ error: 'Refresh token is required' });
+  }
+
+  const db = getDb();
+  const row = db.prepare('SELECT * FROM refresh_tokens WHERE token = ? AND revoked = 0 AND expiresAt > datetime(\'now\')').get(refreshToken);
+  if (!row) {
+    return res.status(401).json({ error: 'Invalid refresh token' });
+  }
+
+  const token = jwt.sign({ userId: row.userId }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
+  res.json({ token });
+});
+
+// POST /api/auth/csrf
+router.post('/csrf', authenticate, (req, res) => {
+  const token = uuidv4();
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  const db = getDb();
+  db.prepare('INSERT INTO csrf_tokens (id, userId, token, expiresAt) VALUES (?, ?, ?, ?)').run(uuidv4(), req.user.id, token, expiresAt);
+  res.json({ token });
 });
 
 // PUT /api/auth/profile - Update profile with image upload
@@ -325,9 +369,17 @@ router.put('/profile', authenticate, upload.single('profileImage'), (req, res) =
   res.json({ user: userResponse(updated) });
 });
 
-// GET /api/auth/verify-email/:token
-router.get('/verify-email/:token', (req, res) => {
-  res.status(501).json({ message: 'Email verification endpoint ready. Integrate email provider to complete.' });
+// POST /api/auth/verify-email/:token
+router.post('/verify-email/:token', (req, res) => {
+  const token = req.params.token;
+  const db = getDb();
+  const row = db.prepare('SELECT * FROM email_verifications WHERE token = ? AND verified = 0 AND expiresAt > datetime(\'now\')').get(token);
+  if (!row) {
+    return res.status(400).json({ error: 'Invalid or expired verification token' });
+  }
+  db.prepare('UPDATE users SET emailVerified = 1, updatedAt = datetime(\'now\') WHERE id = ?').run(row.userId);
+  db.prepare('UPDATE email_verifications SET verified = 1 WHERE id = ?').run(row.id);
+  res.json({ message: 'Email verified successfully' });
 });
 
 // POST /api/auth/forgot-password
@@ -339,13 +391,14 @@ router.post('/forgot-password', (req, res) => {
 
   const db = getDb();
   const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-  
+
   if (!user) {
     return res.json({ message: 'If the email exists, a reset link has been sent' });
   }
 
-  const resetToken = jwt.sign({ userId: user.id, purpose: 'password-reset' }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
-  db.prepare('UPDATE users SET updatedAt = datetime(\'now\') WHERE id = ?').run(user.id);
+  const resetToken = uuidv4();
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  db.prepare('INSERT INTO password_resets (id, userId, token, expiresAt) VALUES (?, ?, ?, ?)').run(uuidv4(), user.id, resetToken, expiresAt);
 
   res.json({ message: 'If the email exists, a reset link has been sent', resetToken });
 });
@@ -361,20 +414,17 @@ router.post('/reset-password', (req, res) => {
     return res.status(400).json({ error: 'Password must be at least 6 characters' });
   }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (decoded.purpose !== 'password-reset') {
-      return res.status(400).json({ error: 'Invalid reset token' });
-    }
-
-    const db = getDb();
-    const passwordHash = bcrypt.hashSync(newPassword, 10);
-    db.prepare('UPDATE users SET passwordHash = ?, updatedAt = datetime(\'now\') WHERE id = ?').run(passwordHash, decoded.userId);
-
-    res.json({ message: 'Password reset successfully' });
-  } catch (err) {
+  const db = getDb();
+  const reset = db.prepare('SELECT * FROM password_resets WHERE token = ? AND used = 0 AND expiresAt > datetime(\'now\')').get(token);
+  if (!reset) {
     return res.status(400).json({ error: 'Invalid or expired reset token' });
   }
+
+  const passwordHash = bcrypt.hashSync(newPassword, 10);
+  db.prepare('UPDATE users SET passwordHash = ?, updatedAt = datetime(\'now\') WHERE id = ?').run(passwordHash, reset.userId);
+  db.prepare('UPDATE password_resets SET used = 1 WHERE id = ?').run(reset.id);
+
+  res.json({ message: 'Password reset successfully' });
 });
 
 module.exports = router;
