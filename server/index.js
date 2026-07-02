@@ -92,7 +92,7 @@ async function initializeApp() {
     if (!landlord) {
       const passwordHash = bcrypt.hashSync('landlord123', 10);
       db.prepare('INSERT INTO users (id, fullName, email, passwordHash, role, phone) VALUES (?, ?, ?, ?, ?, ?)').run(
-        uuidv4(), 'John Landlord', landlordEmail, passwordHash, 'landlord', '+263 71 234 5678'
+        uuidv4(), 'John Landlord', landlordEmail, passwordHash, 'landlord', '+263 00 000 0000'
       );
       landlord = db.prepare('SELECT id FROM users WHERE email = ?').get(landlordEmail);
     }
@@ -124,7 +124,7 @@ async function initializeApp() {
       insert.run(
         uuidv4(), landlord.id, prop.title, prop.description, prop.city, prop.suburb, prop.type,
         prop.bedrooms, prop.bathrooms, prop.price, prop.currency, prop.solar, prop.borehole, prop.fenced,
-        '[]', '+263 71 234 5678', landlordEmail
+        '[]', '+263 00 000 0000', landlordEmail
       );
     }
       console.log('✓ Sample properties created');
