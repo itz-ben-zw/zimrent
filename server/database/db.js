@@ -122,4 +122,4 @@ function getDb() {
   return db;
 }
 
-module.exports = { initDb, getDb };
+module.exports = { initDb, getDb, saveDb };
