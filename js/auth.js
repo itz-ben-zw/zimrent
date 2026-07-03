@@ -115,7 +115,7 @@ async function handleLogin(e) {
 
     loginUser(data);
     if (data.user.role === 'tenant') {
-      window.location.href = 'listings.html';
+      window.location.href = 'tenant-dashboard.html';
     } else {
       window.location.href = 'dashboard.html';
     }
@@ -190,7 +190,7 @@ async function verifyOTP() {
 
     loginUser(data);
     if (data.user.role === 'tenant') {
-      window.location.href = 'listings.html';
+      window.location.href = 'tenant-dashboard.html';
     } else {
       window.location.href = 'dashboard.html';
     }
@@ -259,7 +259,7 @@ function handleGoogleLogin() {
         }
         loginUser(data);
         if (data.user.role === 'tenant') {
-          window.location.href = 'listings.html';
+          window.location.href = 'tenant-dashboard.html';
         } else {
           window.location.href = 'dashboard.html';
         }
@@ -366,7 +366,7 @@ async function handleRegister(e) {
 
     loginUser(data);
     if (data.user.role === 'tenant') {
-      window.location.href = 'listings.html';
+      window.location.href = 'tenant-dashboard.html';
     } else {
       window.location.href = 'dashboard.html';
     }
@@ -406,6 +406,8 @@ function updateNavbar() {
   const userInfo = document.getElementById('nav-user-info');
   const messagesLink = document.getElementById('nav-messages');
   const profileLink = document.getElementById('nav-profile');
+  const dashLink = document.getElementById('nav-dashboard');
+  const landordDashLink = document.getElementById('nav-landlord-dash');
 
   if (user) {
     if (loginLink) loginLink.style.display = 'none';
@@ -413,6 +415,8 @@ function updateNavbar() {
     if (logoutLink) logoutLink.style.display = 'inline-block';
     if (messagesLink) messagesLink.style.display = 'inline-block';
     if (profileLink) profileLink.style.display = 'inline-block';
+    if (dashLink) dashLink.style.display = user.role === 'tenant' ? 'inline-block' : 'none';
+    if (landordDashLink) landordDashLink.style.display = user.role === 'landlord' ? 'inline-block' : 'none';
     if (userInfo) {
       userInfo.style.display = 'inline-flex';
       userInfo.style.alignItems = 'center';

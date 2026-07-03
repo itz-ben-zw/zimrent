@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <title>My Dashboard — ZimRent</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">Zim<span>Rent</span></a>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="listings.html">Browse</a></li>
+            <li><a href="tenant-dashboard.html" class="active" id="nav-dashboard">My Dashboard</a></li>
+            <li><a href="conversations.html" id="nav-messages" style="display:none;">Messages</a></li>
+            <li><a href="profile.html" id="nav-profile" style="display:none;">Profile</a></li>
+            <li><a href="login.html" id="nav-login">Sign In</a></li>
+            <li><a href="register.html" id="nav-register">Register</a></li>
+            <li><a href="#" id="nav-logout" style="display:none;" onclick="logout(); return false;">Logout</a></li>
+            <li><span id="nav-user-info" style="display:none; font-weight:600; color:var(--primary); cursor:pointer;"></span></li>
+        </ul>
+        <button class="menu-toggle">☰</button>
+    </nav>
+
+    <div class="container">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:2rem;">
+            <div>
+                <h1 style="font-size:1.8rem;">My Dashboard</h1>
+                <p style="color:var(--text-muted);" id="welcome-text">Welcome back!</p>
+            </div>
+            <a href="listings.html" class="btn btn-primary">Browse Properties</a>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="dashboard-grid">
+            <div class="dash-card" style="cursor:pointer;" onclick="document.getElementById('fav-section').scrollIntoView({behavior:'smooth'})">
+                <div class="dash-number" id="stat-favorites">0</div>
+                <div class="dash-label">Saved Properties</div>
+            </div>
+            <div class="dash-card" style="cursor:pointer;" onclick="document.getElementById('app-section').scrollIntoView({behavior:'smooth'})">
+                <div class="dash-number" id="stat-applications">0</div>
+                <div class="dash-label">Applications</div>
+            </div>
+            <div class="dash-card" style="cursor:pointer;" onclick="window.location.href='conversations.html'">
+                <div class="dash-number" id="stat-messages">0</div>
+                <div class="dash-label">Unread Messages</div>
+            </div>
+        </div>
+
+        <!-- Saved Properties -->
+        <div id="fav-section" style="margin-top:2rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h2 style="font-size:1.2rem;">Saved Properties</h2>
+                <a href="listings.html" style="font-size:0.9rem; color:var(--primary);">View all →</a>
+            </div>
+            <div id="favorites-list" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1rem;">
+                <div class="empty-state">
+                    <div class="icon"><i class="far fa-heart" style="color:#ccc; font-size:2rem;"></i></div>
+                    <p>No saved properties yet.<br>Browse listings and save your favorites!</p>
+                    <a href="listings.html" class="btn btn-outline" style="margin-top:0.8rem;">Browse Listings</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Applications -->
+        <div id="app-section" style="margin-top:2.5rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h2 style="font-size:1.2rem;">My Applications</h2>
+            </div>
+            <div id="applications-list">
+                <div class="empty-state">
+                    <div class="icon"><i class="fas fa-file-alt" style="color:#ccc; font-size:2rem;"></i></div>
+                    <p>You haven't applied for any properties yet.</p>
+                    <a href="listings.html" class="btn btn-outline" style="margin-top:0.8rem;">Find a Place</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Messages -->
+        <div style="margin-top:2.5rem; margin-bottom:2rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h2 style="font-size:1.2rem;">Recent Messages</h2>
+                <a href="conversations.html" style="font-size:0.9rem; color:var(--primary);">All messages →</a>
+            </div>
+            <div id="messages-preview">
+                <div class="empty-state">
+                    <div class="icon"><i class="fas fa-comments" style="color:#ccc; font-size:2rem;"></i></div>
+                    <p>No messages yet. Contact a landlord from a property page to start chatting.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer" style="margin-top:3rem;">
+        <p style="font-weight:700; font-size:1.1rem;">Zim<span style="color:var(--secondary);">Rent</span></p>
+        <div class="footer-links">
+            <a href="index.html">Home</a>
+            <a href="listings.html">Browse</a>
+            <a href="tenant-dashboard.html">My Dashboard</a>
+        </div>
+        <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1); color:#ccc; font-size:0.9rem;">
+            <div style="margin-bottom:0.4rem;"><i class="fas fa-envelope" style="width:20px;"></i> <a href="mailto:zimrent.online@gmail.com" style="color:#ccc;">zimrent.online@gmail.com</a></div>
+            <div style="margin-bottom:0.4rem;"><i class="fas fa-phone" style="width:20px;"></i> +263 71 080 2153</div>
+            <div><i class="fas fa-phone" style="width:20px;"></i> +27 61 815 5957</div>
+        </div>
+        <p style="color:#aaa; font-size:0.85rem; margin-top:1rem;">© 2026 ZimRent. Built for Zimbabwe.</p>
+    </footer>
+
+    <script src="js/auth.js?v=3"></script>
+    <script src="js/app.js?v=3"></script>
+    <script src="js/tenant-dashboard.js?v=3"></script>
+</body>
+</html>
