@@ -39,7 +39,7 @@ function userResponse(user) {
 }
 
 // POST /api/auth/register
-router.post('/register', upload.single('profileImage'), (req, res) => {
+router.post('/register', upload.single('profileImage'), async (req, res) => {
   const { fullName, email, password, role, phone, username } = req.body;
   const profileImage = req.file ? `/uploads/${req.file.filename}` : (req.body.profileImage || '');
 
@@ -61,14 +61,14 @@ router.post('/register', upload.single('profileImage'), (req, res) => {
   const db = getDb();
 
   // Check email uniqueness
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(email);
   if (existing) {
     return res.status(409).json({ error: 'An account with this email already exists' });
   }
 
   // Check username uniqueness if provided
   if (username) {
-    const existingUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+    const existingUser = await db.prepare('SELECT id FROM users WHERE username = ?').get(username);
     if (existingUser) {
       return res.status(409).json({ error: 'Username already taken' });
     }
@@ -85,13 +85,13 @@ router.post('/register', upload.single('profileImage'), (req, res) => {
     passwordHash,
     role: role || 'tenant',
     phone: phone || '',
-    username: username || '',
+    username: username || null,
     profileImage,
     authProvider: 'email',
     providerId: ''
   };
 
-  db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, phone, username, profileImage, authProvider, providerId) 
+  await db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, phone, username, profileImage, authProvider, providerId) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
     user.id, user.fullName, user.email, user.passwordHash, user.role, user.phone, user.username, user.profileImage, user.authProvider, user.providerId
   );
@@ -99,26 +99,26 @@ router.post('/register', upload.single('profileImage'), (req, res) => {
   // Issue verification email token
   const verifyToken = uuidv4();
   const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-  db.prepare('INSERT INTO email_verifications (id, userId, token, expiresAt) VALUES (?, ?, ?, ?)').run(uuidv4(), user.id, verifyToken, verifyExpires);
+  await db.prepare('INSERT INTO email_verifications (id, userId, token, expiresAt) VALUES (?, ?, ?, ?)').run(uuidv4(), user.id, verifyToken, verifyExpires);
 
   const accessToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
-  const refreshToken = issueRefreshToken(id, req);
+  const refreshToken = await issueRefreshToken(id, req);
 
   res.status(201).json({ token: accessToken, refreshToken, verifyToken, user: userResponse(user) });
 });
 
-function issueRefreshToken(userId, req) {
+async function issueRefreshToken(userId, req) {
   const token = uuidv4();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
   const db = getDb();
-  db.prepare('INSERT INTO refresh_tokens (id, userId, token, userAgent, ip, expiresAt) VALUES (?, ?, ?, ?, ?, ?)').run(
+  await db.prepare('INSERT INTO refresh_tokens (id, userId, token, userAgent, ip, expiresAt) VALUES (?, ?, ?, ?, ?, ?)').run(
     uuidv4(), userId, token, (req.headers['user-agent'] || '').substring(0, 255), (req.ip || req.socket.remoteAddress || '').substring(0, 64), expiresAt
   );
   return token;
 }
 
 // POST /api/auth/login
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -126,7 +126,7 @@ router.post('/login', (req, res) => {
   }
 
   const db = getDb();
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  const user = await db.prepare('SELECT * FROM users WHERE email = ?').get(email);
 
   if (!user) {
     return res.status(401).json({ error: 'No account found with this email' });
@@ -137,13 +137,13 @@ router.post('/login', (req, res) => {
   }
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
-  const refreshToken = issueRefreshToken(user.id, req);
+  const refreshToken = await issueRefreshToken(user.id, req);
 
   res.json({ token, refreshToken, user: userResponse(user) });
 });
 
 // POST /api/auth/google - Google Sign-In
-router.post('/google', (req, res) => {
+router.post('/google', async (req, res) => {
   const { email, fullName, googleId, profileImage } = req.body;
 
   if (!email || !googleId) {
@@ -151,23 +151,23 @@ router.post('/google', (req, res) => {
   }
 
   const db = getDb();
-  let user = db.prepare('SELECT * FROM users WHERE providerId = ? AND authProvider = ?').get(googleId, 'google');
+  let user = await db.prepare('SELECT * FROM users WHERE providerId = ? AND authProvider = ?').get(googleId, 'google');
 
   if (!user) {
     // Check if email already registered
-    const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    const existing = await db.prepare('SELECT * FROM users WHERE email = ?').get(email);
     if (existing) {
       // Link Google account to existing user
-      db.prepare('UPDATE users SET authProvider = ?, providerId = ?, profileImage = COALESCE(NULLIF(?, \'\'), profileImage), updatedAt = datetime(\'now\') WHERE id = ?').run('google', googleId, profileImage || '', existing.id);
-      user = db.prepare('SELECT * FROM users WHERE id = ?').get(existing.id);
+      await db.prepare('UPDATE users SET authProvider = ?, providerId = ?, profileImage = COALESCE(NULLIF(?, \'\'), profileImage), updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run('google', googleId, profileImage || '', existing.id);
+      user = await db.prepare('SELECT * FROM users WHERE id = ?').get(existing.id);
     } else {
       // Create new user with Google
       const id = uuidv4();
-      db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, username, profileImage, authProvider, providerId) 
+      await db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, username, profileImage, authProvider, providerId) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-        id, fullName || email.split('@')[0], email, bcrypt.hashSync(uuidv4(), 10), 'tenant', '', profileImage || '', 'google', googleId
+        id, fullName || email.split('@')[0], email, bcrypt.hashSync(uuidv4(), 10), 'tenant', null, profileImage || '', 'google', googleId
       );
-      user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+      user = await db.prepare('SELECT * FROM users WHERE id = ?').get(id);
     }
   }
 
@@ -176,7 +176,7 @@ router.post('/google', (req, res) => {
 });
 
 // POST /api/auth/phone/send-otp - Send OTP to phone number
-router.post('/phone/send-otp', (req, res) => {
+router.post('/phone/send-otp', async (req, res) => {
   const { phone } = req.body;
 
   if (!phone || !/^\+?[\d\s\-]{7,15}$/.test(phone)) {
@@ -260,7 +260,7 @@ async function sendSMS(to, otp) {
 }
 
 // POST /api/auth/phone/verify - Verify OTP and login/register
-router.post('/phone/verify', (req, res) => {
+router.post('/phone/verify', async (req, res) => {
   const { phone, otp, fullName, role } = req.body;
 
   if (!phone || !otp) {
@@ -283,41 +283,41 @@ router.post('/phone/verify', (req, res) => {
   otpStore.delete(phone);
 
   const db = getDb();
-  let user = db.prepare('SELECT * FROM users WHERE phone = ? AND phone != \'\'').get(phone);
+  let user = await db.prepare('SELECT * FROM users WHERE phone = ? AND phone != \'\'').get(phone);
 
   if (!user) {
     // Auto-register with phone
     const id = uuidv4();
     const email = `user_${phone.replace(/[^0-9]/g, '')}@zimrent.phone`;
-    db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, phone, username, profileImage, authProvider, phoneVerified) 
+    await db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, phone, username, profileImage, authProvider, phoneVerified) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-      id, fullName || 'User', email, bcrypt.hashSync(uuidv4(), 10), role || 'tenant', phone, '', '', 'phone', 1
+      id, fullName || 'User', email, bcrypt.hashSync(uuidv4(), 10), role || 'tenant', phone, null, '', 'phone', 1
     );
-    user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+    user = await db.prepare('SELECT * FROM users WHERE id = ?').get(id);
   } else if (!user.phoneVerified) {
-    db.prepare('UPDATE users SET phoneVerified = 1, updatedAt = datetime(\'now\') WHERE id = ?').run(user.id);
+    await db.prepare('UPDATE users SET phoneVerified = 1, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
     user.phoneVerified = 1;
   }
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
-  const refreshToken = issueRefreshToken(user.id, req);
+  const refreshToken = await issueRefreshToken(user.id, req);
   res.json({ token, refreshToken, user: userResponse(user) });
 });
 
 // GET /api/auth/me
-router.get('/me', authenticate, (req, res) => {
+router.get('/me', authenticate, async (req, res) => {
   res.json({ user: req.user });
 });
 
 // POST /api/auth/refresh-token
-router.post('/refresh-token', (req, res) => {
+router.post('/refresh-token', async (req, res) => {
   const { refreshToken } = req.body;
   if (!refreshToken) {
     return res.status(400).json({ error: 'Refresh token is required' });
   }
 
   const db = getDb();
-  const row = db.prepare('SELECT * FROM refresh_tokens WHERE token = ? AND revoked = 0 AND expiresAt > datetime(\'now\')').get(refreshToken);
+  const row = await db.prepare('SELECT * FROM refresh_tokens WHERE token = ? AND revoked = 0 AND expiresAt > CURRENT_TIMESTAMP').get(refreshToken);
   if (!row) {
     return res.status(401).json({ error: 'Invalid refresh token' });
   }
@@ -327,70 +327,70 @@ router.post('/refresh-token', (req, res) => {
 });
 
 // POST /api/auth/csrf
-router.post('/csrf', authenticate, (req, res) => {
+router.post('/csrf', authenticate, async (req, res) => {
   const token = uuidv4();
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
   const db = getDb();
-  db.prepare('INSERT INTO csrf_tokens (id, userId, token, expiresAt) VALUES (?, ?, ?, ?)').run(uuidv4(), req.user.id, token, expiresAt);
+  await db.prepare('INSERT INTO csrf_tokens (id, userId, token, expiresAt) VALUES (?, ?, ?, ?)').run(uuidv4(), req.user.id, token, expiresAt);
   res.json({ token });
 });
 
 // PUT /api/auth/profile - Update profile with image upload
-router.put('/profile', authenticate, upload.single('profileImage'), (req, res) => {
+router.put('/profile', authenticate, upload.single('profileImage'), async (req, res) => {
   const { fullName, phone, username } = req.body;
   const db = getDb();
 
   // Check username uniqueness if changed
   if (username) {
-    const existing = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(username, req.user.id);
+    const existing = await db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(username, req.user.id);
     if (existing) {
       return res.status(409).json({ error: 'Username already taken' });
     }
-    db.prepare('UPDATE users SET username = ?, updatedAt = datetime(\'now\') WHERE id = ?').run(username, req.user.id);
+    await db.prepare('UPDATE users SET username = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(username, req.user.id);
   }
 
   if (fullName) {
-    db.prepare('UPDATE users SET fullName = ?, updatedAt = datetime(\'now\') WHERE id = ?').run(fullName, req.user.id);
+    await db.prepare('UPDATE users SET fullName = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(fullName, req.user.id);
   }
   if (phone !== undefined) {
-    db.prepare('UPDATE users SET phone = ?, updatedAt = datetime(\'now\') WHERE id = ?').run(phone, req.user.id);
+    await db.prepare('UPDATE users SET phone = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(phone, req.user.id);
   }
 
   // Handle profile image upload
   if (req.file) {
     const imagePath = `/uploads/${req.file.filename}`;
-    db.prepare('UPDATE users SET profileImage = ?, updatedAt = datetime(\'now\') WHERE id = ?').run(imagePath, req.user.id);
+    await db.prepare('UPDATE users SET profileImage = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(imagePath, req.user.id);
   } else if (req.body.profileImage && req.body.profileImage.startsWith('data:')) {
     // base64 image from file input
-    db.prepare('UPDATE users SET profileImage = ?, updatedAt = datetime(\'now\') WHERE id = ?').run(req.body.profileImage, req.user.id);
+    await db.prepare('UPDATE users SET profileImage = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(req.body.profileImage, req.user.id);
   }
 
-  const updated = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+  const updated = await db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
   res.json({ user: userResponse(updated) });
 });
 
 // POST /api/auth/verify-email/:token
-router.post('/verify-email/:token', (req, res) => {
+router.post('/verify-email/:token', async (req, res) => {
   const token = req.params.token;
   const db = getDb();
-  const row = db.prepare('SELECT * FROM email_verifications WHERE token = ? AND verified = 0 AND expiresAt > datetime(\'now\')').get(token);
+  const row = await db.prepare('SELECT * FROM email_verifications WHERE token = ? AND verified = 0 AND expiresAt > CURRENT_TIMESTAMP').get(token);
   if (!row) {
     return res.status(400).json({ error: 'Invalid or expired verification token' });
   }
-  db.prepare('UPDATE users SET emailVerified = 1, updatedAt = datetime(\'now\') WHERE id = ?').run(row.userId);
-  db.prepare('UPDATE email_verifications SET verified = 1 WHERE id = ?').run(row.id);
+  await db.prepare('UPDATE users SET emailVerified = 1, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(row.userId);
+  await db.prepare('UPDATE email_verifications SET verified = 1 WHERE id = ?').run(row.id);
   res.json({ message: 'Email verified successfully' });
 });
 
 // POST /api/auth/forgot-password
-router.post('/forgot-password', (req, res) => {
+router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) {
     return res.status(400).json({ error: 'Email is required' });
   }
 
   const db = getDb();
-  const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  const user = await db.prepare('SELECT id FROM users WHERE email = ?').get(email);
 
   if (!user) {
     return res.json({ message: 'If the email exists, a reset link has been sent' });
@@ -398,13 +398,13 @@ router.post('/forgot-password', (req, res) => {
 
   const resetToken = uuidv4();
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-  db.prepare('INSERT INTO password_resets (id, userId, token, expiresAt) VALUES (?, ?, ?, ?)').run(uuidv4(), user.id, resetToken, expiresAt);
+  await db.prepare('INSERT INTO password_resets (id, userId, token, expiresAt) VALUES (?, ?, ?, ?)').run(uuidv4(), user.id, resetToken, expiresAt);
 
   res.json({ message: 'If the email exists, a reset link has been sent', resetToken });
 });
 
 // POST /api/auth/reset-password
-router.post('/reset-password', (req, res) => {
+router.post('/reset-password', async (req, res) => {
   const { token, newPassword } = req.body;
 
   if (!token || !newPassword) {
@@ -415,14 +415,14 @@ router.post('/reset-password', (req, res) => {
   }
 
   const db = getDb();
-  const reset = db.prepare('SELECT * FROM password_resets WHERE token = ? AND used = 0 AND expiresAt > datetime(\'now\')').get(token);
+  const reset = await db.prepare('SELECT * FROM password_resets WHERE token = ? AND used = 0 AND expiresAt > CURRENT_TIMESTAMP').get(token);
   if (!reset) {
     return res.status(400).json({ error: 'Invalid or expired reset token' });
   }
 
   const passwordHash = bcrypt.hashSync(newPassword, 10);
-  db.prepare('UPDATE users SET passwordHash = ?, updatedAt = datetime(\'now\') WHERE id = ?').run(passwordHash, reset.userId);
-  db.prepare('UPDATE password_resets SET used = 1 WHERE id = ?').run(reset.id);
+  await db.prepare('UPDATE users SET passwordHash = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(passwordHash, reset.userId);
+  await db.prepare('UPDATE password_resets SET used = 1 WHERE id = ?').run(reset.id);
 
   res.json({ message: 'Password reset successfully' });
 });

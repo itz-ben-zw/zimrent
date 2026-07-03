@@ -1,125 +1,134 @@
-// Thin wrapper around sql.js to provide better-sqlite3 compatible API
-const path = require('path');
-const fs = require('fs');
-const initSqlJs = require('sql.js');
+// Postgres-backed database wrapper. Exposes the same prepare().get/all/run
+// shape the route files already use, but every call is now async (returns a
+// Promise) since node-postgres is inherently async. Call sites must `await`.
+const { Pool } = require('pg');
 
-const DB_PATH = path.join(__dirname, '..', 'zimrent.db');
-
-let sqlDb = null;
-let db = null;
+let pool = null;
 
 async function initDb() {
-  const SQL = await initSqlJs();
-  
-  if (fs.existsSync(DB_PATH)) {
-    const buffer = fs.readFileSync(DB_PATH);
-    sqlDb = new SQL.Database(buffer);
-  } else {
-    sqlDb = new SQL.Database();
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error('DATABASE_URL environment variable is not set. Add a Render Postgres instance and set DATABASE_URL.');
   }
-  
-  sqlDb.run('PRAGMA foreign_keys = ON');
-  
-  // Create a wrapped db object with better-sqlite3 compatible API
-  db = {
+
+  pool = new Pool({
+    connectionString,
+    // Render's managed Postgres requires SSL but uses a self-signed chain
+    // for its internal cert, so we don't verify against a CA here.
+    ssl: connectionString.includes('localhost') ? false : { rejectUnauthorized: false }
+  });
+
+  // Fail fast if the connection is bad, rather than on the first query.
+  const client = await pool.connect();
+  client.release();
+
+  return getDb();
+}
+
+// Converts '?' positional placeholders (SQLite style, used throughout the
+// route files) into Postgres's $1, $2, ... style.
+// Postgres lowercases unquoted identifiers, but the route files and
+// frontend expect camelCase keys (fullName, createdAt, etc.) exactly as
+// written in schema.sql and in SELECT ... AS aliases. This map restores the
+// original camelCase casing on every row returned from a query.
+const CAMEL_CASE_COLUMNS = [
+  'fullName', 'passwordHash', 'profileImage', 'emailVerified', 'phoneVerified',
+  'authProvider', 'providerId', 'createdAt', 'updatedAt', 'landlordId', 'bedrooms',
+  'bathrooms', 'customAdditions', 'propertyId', 'tenantId', 'userId', 'conversationId',
+  'senderId', 'expiresAt', 'userAgent',
+  'favId', 'favoritedAt', 'landlordEmail', 'landlordName', 'propertyCity',
+  'propertySuburb', 'propertyTitle', 'receiverEmail', 'receiverName',
+  'senderEmail', 'senderName', 'tenantEmail', 'tenantName', 'tenantPhone'
+];
+const CASE_MAP = Object.fromEntries(CAMEL_CASE_COLUMNS.map(c => [c.toLowerCase(), c]));
+
+function restoreCase(row) {
+  if (!row) return row;
+  const out = {};
+  for (const [key, value] of Object.entries(row)) {
+    out[CASE_MAP[key] || key] = value;
+  }
+  return out;
+}
+
+function toPgSql(sql) {
+  let i = 0;
+  return sql.replace(/\?/g, () => `$${++i}`);
+}
+
+function getDb() {
+  if (!pool) throw new Error('Database not initialized');
+  return {
     prepare(sql) {
-      return new Statement(sql, sqlDb);
+      return new Statement(sql);
     },
-    exec(sql) {
-      sqlDb.exec(sql);
+    async exec(sql) {
+      await pool.query(sql);
     },
-    run(sql, params) {
-      sqlDb.run(sql, params);
-      saveDb();
-    },
+    // Transaction helper matching existing call sites (fn takes no client
+    // arg). Uses a dedicated client with BEGIN/COMMIT/ROLLBACK for atomicity.
     transaction(fn) {
-      return function(...args) {
+      return async function (...args) {
+        const client = await pool.connect();
         try {
-          sqlDb.run('BEGIN TRANSACTION');
-          const result = fn(...args);
-          sqlDb.run('COMMIT');
-          saveDb();
+          await client.query('BEGIN');
+          const result = await fn(...args);
+          await client.query('COMMIT');
           return result;
         } catch (e) {
-          sqlDb.run('ROLLBACK');
+          await client.query('ROLLBACK');
           throw e;
+        } finally {
+          client.release();
         }
       };
     },
-    close() {
-      saveDb();
-      if (sqlDb) sqlDb.close();
+    async close() {
+      if (pool) await pool.end();
     }
   };
-  
-  return db;
 }
 
 class Statement {
-  constructor(sql, sqlDb) {
-    this.sql = sql;
-    this.sqlDb = sqlDb;
+  constructor(sql) {
+    this.sql = toPgSql(sql);
+    this.originalSql = sql;
   }
-  
-  get(...params) {
+
+  async get(...params) {
     try {
-      const stmt = this.sqlDb.prepare(this.sql);
-      if (params.length > 0) {
-        stmt.bind(params);
-      }
-      if (stmt.step()) {
-        const result = stmt.getAsObject();
-        stmt.free();
-        return result;
-      }
-      stmt.free();
-      return undefined;
+      const result = await pool.query(this.sql, params);
+      return restoreCase(result.rows[0]);
     } catch (e) {
-      console.error('SQL get error:', this.sql, params, e.message);
+      console.error('SQL get error:', this.originalSql, params, e.message);
       return undefined;
     }
   }
-  
-  all(...params) {
+
+  async all(...params) {
     try {
-      const results = [];
-      const stmt = this.sqlDb.prepare(this.sql);
-      if (params.length > 0) {
-        stmt.bind(params);
-      }
-      while (stmt.step()) {
-        results.push(stmt.getAsObject());
-      }
-      stmt.free();
-      return results;
+      const result = await pool.query(this.sql, params);
+      return result.rows.map(restoreCase);
     } catch (e) {
-      console.error('SQL all error:', this.sql, params, e.message);
+      console.error('SQL all error:', this.originalSql, params, e.message);
       return [];
     }
   }
-  
-  run(...params) {
+
+  async run(...params) {
     try {
-      this.sqlDb.run(this.sql, params);
-      saveDb();
-      return { changes: this.sqlDb.getRowsModified() };
+      const result = await pool.query(this.sql, params);
+      return { changes: result.rowCount };
     } catch (e) {
-      console.error('SQL run error:', this.sql, params, e.message);
+      console.error('SQL run error:', this.originalSql, params, e.message);
       throw e;
     }
   }
 }
 
 function saveDb() {
-  if (!sqlDb) return;
-  const data = sqlDb.export();
-  const buffer = Buffer.from(data);
-  fs.writeFileSync(DB_PATH, buffer);
-}
-
-function getDb() {
-  if (!db) throw new Error('Database not initialized');
-  return db;
+  // No-op: Postgres persists automatically. Kept as a stub so existing
+  // callers (which called saveDb() after writes under sql.js) don't error.
 }
 
 module.exports = { initDb, getDb, saveDb };

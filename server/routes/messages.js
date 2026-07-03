@@ -6,7 +6,7 @@ const { authenticate } = require('../middleware/auth');
 const router = express.Router();
 
 // POST /api/messages - Send a message
-router.post('/', authenticate, (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   const { receiverId, propertyId, message } = req.body;
 
   if (!receiverId || !message) {
@@ -23,7 +23,7 @@ router.post('/', authenticate, (req, res) => {
     read: 0
   };
 
-  db.prepare('INSERT INTO messages (id, senderId, receiverId, propertyId, message, read) VALUES (?, ?, ?, ?, ?, ?)').run(
+  await db.prepare('INSERT INTO messages (id, senderId, receiverId, propertyId, message, read) VALUES (?, ?, ?, ?, ?, ?)').run(
     msg.id, msg.senderId, msg.receiverId, msg.propertyId, msg.message, msg.read
   );
 
@@ -31,11 +31,11 @@ router.post('/', authenticate, (req, res) => {
 });
 
 // GET /api/messages - Get user's conversations
-router.get('/', authenticate, (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   const db = getDb();
   
   // Get messages where user is sender or receiver
-  const messages = db.prepare(`
+  const messages = await db.prepare(`
     SELECT m.*, 
            s.fullName as senderName, s.email as senderEmail,
            r.fullName as receiverName, r.email as receiverEmail,
@@ -52,9 +52,9 @@ router.get('/', authenticate, (req, res) => {
 });
 
 // GET /api/messages/conversation/:userId - Get conversation with specific user
-router.get('/conversation/:userId', authenticate, (req, res) => {
+router.get('/conversation/:userId', authenticate, async (req, res) => {
   const db = getDb();
-  const messages = db.prepare(`
+  const messages = await db.prepare(`
     SELECT m.*,
            s.fullName as senderName,
            p.title as propertyTitle
@@ -66,15 +66,15 @@ router.get('/conversation/:userId', authenticate, (req, res) => {
   `).all(req.user.id, req.params.userId, req.params.userId, req.user.id);
 
   // Mark messages as read
-  db.prepare('UPDATE messages SET read = 1 WHERE senderId = ? AND receiverId = ? AND read = 0').run(req.params.userId, req.user.id);
+  await db.prepare('UPDATE messages SET read = 1 WHERE senderId = ? AND receiverId = ? AND read = 0').run(req.params.userId, req.user.id);
 
   res.json({ messages });
 });
 
 // GET /api/messages/unread-count
-router.get('/unread-count', authenticate, (req, res) => {
+router.get('/unread-count', authenticate, async (req, res) => {
   const db = getDb();
-  const count = db.prepare('SELECT COUNT(*) as count FROM messages WHERE receiverId = ? AND read = 0').get(req.user.id);
+  const count = await db.prepare('SELECT COUNT(*)::int as count FROM messages WHERE receiverId = ? AND read = 0').get(req.user.id);
   res.json({ unreadCount: count.count });
 });
 

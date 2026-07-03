@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { getDb } = require('../database/db');
 
-function authenticate(req, res, next) {
+async function authenticate(req, res, next) {
   // Check for token in Authorization header or cookies
   let token = null;
   
@@ -21,7 +21,7 @@ function authenticate(req, res, next) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const db = getDb();
-    const user = db.prepare('SELECT id, fullName, email, role, phone, profileImage, emailVerified FROM users WHERE id = ?').get(decoded.userId);
+    const user = await db.prepare('SELECT id, fullName, email, role, phone, profileImage, emailVerified FROM users WHERE id = ?').get(decoded.userId);
     
     if (!user) {
       return res.status(401).json({ error: 'User not found' });
@@ -34,7 +34,7 @@ function authenticate(req, res, next) {
   }
 }
 
-function optionalAuth(req, res, next) {
+async function optionalAuth(req, res, next) {
   let token = null;
   
   const authHeader = req.headers.authorization;
@@ -50,7 +50,7 @@ function optionalAuth(req, res, next) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const db = getDb();
-      const user = db.prepare('SELECT id, fullName, email, role, phone, profileImage, emailVerified FROM users WHERE id = ?').get(decoded.userId);
+      const user = await db.prepare('SELECT id, fullName, email, role, phone, profileImage, emailVerified FROM users WHERE id = ?').get(decoded.userId);
       if (user) {
         req.user = user;
       }

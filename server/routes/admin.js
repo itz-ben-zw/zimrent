@@ -9,16 +9,16 @@ const router = express.Router();
 router.use(authenticate, authorize('admin'));
 
 // GET /api/admin/users - Get all users
-router.get('/users', (req, res) => {
+router.get('/users', async (req, res) => {
   const db = getDb();
-  const users = db.prepare('SELECT id, fullName, email, role, phone, profileImage, createdAt FROM users ORDER BY createdAt DESC').all();
+  const users = await db.prepare('SELECT id, fullName, email, role, phone, profileImage, createdAt FROM users ORDER BY createdAt DESC').all();
   res.json({ users });
 });
 
 // DELETE /api/admin/users/:id - Remove user
-router.delete('/users/:id', (req, res) => {
+router.delete('/users/:id', async (req, res) => {
   const db = getDb();
-  const user = db.prepare('SELECT id, role FROM users WHERE id = ?').get(req.params.id);
+  const user = await db.prepare('SELECT id, role FROM users WHERE id = ?').get(req.params.id);
   
   if (!user) {
     return res.status(404).json({ error: 'User not found' });
@@ -27,21 +27,21 @@ router.delete('/users/:id', (req, res) => {
     return res.status(400).json({ error: 'Cannot delete admin users' });
   }
 
-  db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
+  await db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
   res.json({ message: 'User deleted' });
 });
 
 // PUT /api/admin/users/:id/suspend - Suspend account (marks as suspended)
-router.put('/users/:id/suspend', (req, res) => {
+router.put('/users/:id/suspend', async (req, res) => {
   const db = getDb();
-  db.prepare('UPDATE users SET role = ?, updatedAt = datetime(\'now\') WHERE id = ?').run('suspended', req.params.id);
+  await db.prepare('UPDATE users SET role = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run('suspended', req.params.id);
   res.json({ message: 'Account suspended' });
 });
 
 // GET /api/admin/properties - Get all properties
-router.get('/properties', (req, res) => {
+router.get('/properties', async (req, res) => {
   const db = getDb();
-  const properties = db.prepare(`
+  const properties = await db.prepare(`
     SELECT p.*, u.fullName as landlordName, u.email as landlordEmail
     FROM properties p
     JOIN users u ON p.landlordId = u.id
@@ -60,16 +60,16 @@ router.get('/properties', (req, res) => {
 });
 
 // DELETE /api/admin/properties/:id - Remove property
-router.delete('/properties/:id', (req, res) => {
+router.delete('/properties/:id', async (req, res) => {
   const db = getDb();
-  db.prepare('DELETE FROM properties WHERE id = ?').run(req.params.id);
+  await db.prepare('DELETE FROM properties WHERE id = ?').run(req.params.id);
   res.json({ message: 'Property deleted' });
 });
 
 // GET /api/admin/applications - Get all applications
-router.get('/applications', (req, res) => {
+router.get('/applications', async (req, res) => {
   const db = getDb();
-  const applications = db.prepare(`
+  const applications = await db.prepare(`
     SELECT a.*, p.title as propertyTitle, u.fullName as tenantName, u.email as tenantEmail
     FROM applications a
     JOIN properties p ON a.propertyId = p.id
@@ -80,14 +80,14 @@ router.get('/applications', (req, res) => {
 });
 
 // GET /api/admin/stats - Dashboard stats
-router.get('/stats', (req, res) => {
+router.get('/stats', async (req, res) => {
   const db = getDb();
-  const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get();
-  const totalLandlords = db.prepare('SELECT COUNT(*) as count FROM users WHERE role = ?').get('landlord');
-  const totalTenants = db.prepare('SELECT COUNT(*) as count FROM users WHERE role = ?').get('tenant');
-  const totalProperties = db.prepare('SELECT COUNT(*) as count FROM properties').get();
-  const totalApplications = db.prepare('SELECT COUNT(*) as count FROM applications').get();
-  const pendingApplications = db.prepare('SELECT COUNT(*) as count FROM applications WHERE status = ?').get('pending');
+  const totalUsers = await db.prepare('SELECT COUNT(*)::int as count FROM users').get();
+  const totalLandlords = await db.prepare('SELECT COUNT(*)::int as count FROM users WHERE role = ?').get('landlord');
+  const totalTenants = await db.prepare('SELECT COUNT(*)::int as count FROM users WHERE role = ?').get('tenant');
+  const totalProperties = await db.prepare('SELECT COUNT(*)::int as count FROM properties').get();
+  const totalApplications = await db.prepare('SELECT COUNT(*)::int as count FROM applications').get();
+  const pendingApplications = await db.prepare('SELECT COUNT(*)::int as count FROM applications WHERE status = ?').get('pending');
 
   res.json({
     stats: {

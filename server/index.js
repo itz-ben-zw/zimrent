@@ -58,14 +58,14 @@ app.use('/api/admin', adminRoutes);
 app.use(express.static(path.join(__dirname, '..')));
 
 // All other routes -> index.html for SPA-like fallback
-app.get('*', (req, res) => {
+app.get('*', async (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
 
 // Initialize database and create admin user
 async function initializeApp() {
   await initDb();
-  runMigration();
+  await runMigration();
   
   const db = getDb();
   
@@ -73,10 +73,10 @@ async function initializeApp() {
   const adminEmail = process.env.ADMIN_EMAIL;
   if (adminEmail) {
     try {
-      const existingAdmin = db.prepare('SELECT id FROM users WHERE email = ?').get(adminEmail);
+      const existingAdmin = await db.prepare('SELECT id FROM users WHERE email = ?').get(adminEmail);
       if (!existingAdmin) {
         const passwordHash = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'admin123', 10);
-        db.prepare('INSERT INTO users (id, fullName, email, passwordHash, role, phone) VALUES (?, ?, ?, ?, ?, ?)').run(
+        await db.prepare('INSERT INTO users (id, fullName, email, passwordHash, role, phone) VALUES (?, ?, ?, ?, ?, ?)').run(
           uuidv4(), 'Admin', adminEmail, passwordHash, 'admin', '+263 77 000 0000'
         );
         console.log('✓ Admin created:', adminEmail);
@@ -86,58 +86,39 @@ async function initializeApp() {
     }
   }
   
-  // Create sample landlord if none exist
+  // One-time cleanup: remove the sample/demo listings and demo landlord
+  // account that used to be auto-seeded on every server start. Safe to run
+  // repeatedly — it's a no-op once they're gone.
   try {
-    const landlordEmail = 'landlord@zimrent.com';
-    let landlord = db.prepare('SELECT id FROM users WHERE email = ?').get(landlordEmail);
-
-    if (!landlord) {
-      const passwordHash = bcrypt.hashSync('landlord123', 10);
-      db.prepare('INSERT INTO users (id, fullName, email, passwordHash, role, phone) VALUES (?, ?, ?, ?, ?, ?)').run(
-        uuidv4(), 'John Landlord', landlordEmail, passwordHash, 'landlord', '+263 00 000 0000'
-      );
-      landlord = db.prepare('SELECT id FROM users WHERE email = ?').get(landlordEmail);
+    const demoTitles = [
+      'Modern 3-Bed House in Borrowdale',
+      'Luxury Apartment with City View',
+      'Family Townhouse in Burnside'
+    ];
+    const demoLandlordEmail = 'landlord@zimrent.com';
+    const placeholders = demoTitles.map(() => '?').join(',');
+    const removed = await db.prepare(
+      `DELETE FROM properties WHERE title IN (${placeholders}) AND email = ?`
+    ).run(...demoTitles, demoLandlordEmail);
+    if (removed.changes > 0) {
+      console.log(`✓ Removed ${removed.changes} legacy demo listing(s)`);
     }
-
-    const sampleMarker = db.prepare('SELECT id FROM properties WHERE title = ?').get('Modern 3-Bed House in Borrowdale');
-    if (!sampleMarker) {
-      const sampleProperties = [
-        {
-          title: 'Modern 3-Bed House in Borrowdale',
-          description: 'Beautiful family home with solar power, borehole water, and a spacious garden. Located in a quiet cul-de-sac in Borrowdale.',
-          city: 'Harare', suburb: 'Borrowdale', type: 'House', bedrooms: 3, bathrooms: 2,
-          price: 850, currency: 'USD', solar: 1, borehole: 1, fenced: 1
-        },
-        {
-          title: 'Luxury Apartment with City View',
-          description: 'Stunning 2-bed apartment in Avondale with modern finishes, secure parking, and backup power.',
-          city: 'Harare', suburb: 'Avondale', type: 'Apartment', bedrooms: 2, bathrooms: 2,
-          price: 650, currency: 'USD', solar: 1, borehole: 0, fenced: 0
-        },
-        {
-          title: 'Family Townhouse in Burnside',
-          description: 'Spacious 4-bed townhouse with borehole water and a large yard. Perfect for families.',
-          city: 'Bulawayo', suburb: 'Burnside', type: 'Townhouse', bedrooms: 4, bathrooms: 2,
-          price: 500, currency: 'USD', solar: 1, borehole: 1, fenced: 1
-        }
-      ];
-
-      const insert = db.prepare(`INSERT INTO properties (id, landlordId, title, description, city, suburb, type, bedrooms, bathrooms, price, currency, solar, borehole, fenced, images, phone, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-      
-      for (const prop of sampleProperties) {
-        insert.run(
-          uuidv4(), landlord.id, prop.title, prop.description, prop.city, prop.suburb, prop.type,
-          prop.bedrooms, prop.bathrooms, prop.price, prop.currency, prop.solar, prop.borehole, prop.fenced,
-          '[]', '+263 00 000 0000', landlordEmail
-        );
+    // Only remove the demo landlord account if it has no real listings left.
+    const remaining = await db.prepare('SELECT COUNT(*)::int as count FROM properties WHERE email = ?').get(demoLandlordEmail);
+    if (Number(remaining.count) === 0) {
+      const deletedUser = await db.prepare('DELETE FROM users WHERE email = ?').run(demoLandlordEmail);
+      if (deletedUser.changes > 0) {
+        console.log('✓ Removed legacy demo landlord account');
       }
-      console.log('✓ Sample properties created');
-    } else {
-      console.log('✓ Sample properties already exist');
     }
   } catch (err) {
-    console.warn('Skipped sample data creation:', err.message);
+    console.warn('Skipped demo data cleanup:', err.message);
   }
+
+  // NOTE: Demo/sample data seeding has been permanently removed (it used to
+  // be opt-in via SEED_SAMPLE_DATA=true, but that's fragile if the DB is
+  // ever wiped on deploy with the var still set). The cleanup step above
+  // still runs to catch any pre-existing legacy demo rows.
 }
 
 // Start server

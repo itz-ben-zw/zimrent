@@ -7,11 +7,11 @@ const upload = require('../middleware/upload');
 const router = express.Router();
 
 // GET /api/properties - List all properties with filters + pagination
-router.get('/', optionalAuth, (req, res) => {
+router.get('/', optionalAuth, async (req, res) => {
   const db = getDb();
   let query = 'SELECT * FROM properties WHERE 1=1';
   const params = [];
-  const countQuery = 'SELECT COUNT(*) as total FROM properties WHERE 1=1';
+  const countQuery = 'SELECT COUNT(*)::int as total FROM properties WHERE 1=1';
   const countParams = [];
 
   if (req.query.city) {
@@ -77,7 +77,7 @@ router.get('/', optionalAuth, (req, res) => {
 
   query += ' ORDER BY createdAt DESC';
 
-  const totalRow = db.prepare(countQuery).get(...countParams);
+  const totalRow = await db.prepare(countQuery).get(...countParams);
   const total = totalRow.total;
 
   const page = parseInt(req.query.page) || 1;
@@ -87,7 +87,7 @@ router.get('/', optionalAuth, (req, res) => {
   query += ' LIMIT ? OFFSET ?';
   params.push(limit, offset);
 
-  const properties = db.prepare(query).all(...params);
+  const properties = await db.prepare(query).all(...params);
   
   const parsed = properties.map(p => ({
     ...p,
@@ -106,20 +106,20 @@ router.get('/', optionalAuth, (req, res) => {
 });
 
 // GET /api/properties/:id - Get single property
-router.get('/:id', optionalAuth, (req, res) => {
+router.get('/:id', optionalAuth, async (req, res) => {
   const db = getDb();
-  const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
+  const property = await db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
 
   if (!property) {
     return res.status(404).json({ error: 'Property not found' });
   }
 
-  const landlord = db.prepare('SELECT id, fullName, email, phone, profileImage FROM users WHERE id = ?').get(property.landlordId);
+  const landlord = await db.prepare('SELECT id, fullName, email, phone, profileImage FROM users WHERE id = ?').get(property.landlordId);
 
   // Check if user has favorited
   let isFavorited = false;
   if (req.user) {
-    const fav = db.prepare('SELECT id FROM favorites WHERE userId = ? AND propertyId = ?').get(req.user.id, property.id);
+    const fav = await db.prepare('SELECT id FROM favorites WHERE userId = ? AND propertyId = ?').get(req.user.id, property.id);
     isFavorited = !!fav;
   }
 
@@ -137,7 +137,7 @@ router.get('/:id', optionalAuth, (req, res) => {
 });
 
 // POST /api/properties - Create property (landlord/admin)
-router.post('/', authenticate, authorize('landlord', 'admin'), upload.array('images', 10), (req, res) => {
+router.post('/', authenticate, authorize('landlord', 'admin'), upload.array('images', 10), async (req, res) => {
   const { title, description, city, suburb, type, bedrooms, bathrooms, price, currency, solar, borehole, fenced, customAdditions, phone, email, whatsapp } = req.body;
 
   if (!title || !city || !suburb || !type || !price) {
@@ -169,7 +169,7 @@ router.post('/', authenticate, authorize('landlord', 'admin'), upload.array('ima
   };
 
   const db = getDb();
-  db.prepare(`INSERT INTO properties (id, landlordId, title, description, city, suburb, type, bedrooms, bathrooms, price, currency, solar, borehole, fenced, customAdditions, images, phone, email, whatsapp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+  await db.prepare(`INSERT INTO properties (id, landlordId, title, description, city, suburb, type, bedrooms, bathrooms, price, currency, solar, borehole, fenced, customAdditions, images, phone, email, whatsapp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
     property.id, property.landlordId, property.title, property.description, property.city, property.suburb, property.type,
     property.bedrooms, property.bathrooms, property.price, property.currency, property.solar, property.borehole, property.fenced,
     property.customAdditions, property.images, property.phone, property.email, property.whatsapp
@@ -184,9 +184,9 @@ router.post('/', authenticate, authorize('landlord', 'admin'), upload.array('ima
 });
 
 // PUT /api/properties/:id - Update property (owner or admin)
-router.put('/:id', authenticate, (req, res) => {
+router.put('/:id', authenticate, async (req, res) => {
   const db = getDb();
-  const existing = db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
+  const existing = await db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
 
   if (!existing) {
     return res.status(404).json({ error: 'Property not found' });
@@ -198,7 +198,7 @@ router.put('/:id', authenticate, (req, res) => {
 
   const { title, description, city, suburb, type, bedrooms, bathrooms, price, currency, solar, borehole, fenced, customAdditions, phone, email, whatsapp } = req.body;
 
-  db.prepare(`UPDATE properties SET title = ?, description = ?, city = ?, suburb = ?, type = ?, bedrooms = ?, bathrooms = ?, price = ?, currency = ?, solar = ?, borehole = ?, fenced = ?, customAdditions = ?, phone = ?, email = ?, whatsapp = ?, updatedAt = datetime('now') WHERE id = ?`).run(
+  await db.prepare(`UPDATE properties SET title = ?, description = ?, city = ?, suburb = ?, type = ?, bedrooms = ?, bathrooms = ?, price = ?, currency = ?, solar = ?, borehole = ?, fenced = ?, customAdditions = ?, phone = ?, email = ?, whatsapp = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`).run(
     title || existing.title,
     description !== undefined ? description : existing.description,
     city || existing.city,
@@ -218,7 +218,7 @@ router.put('/:id', authenticate, (req, res) => {
     req.params.id
   );
 
-  const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
+  const updated = await db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
   res.json({
     property: {
       ...updated,
@@ -231,9 +231,9 @@ router.put('/:id', authenticate, (req, res) => {
 });
 
 // DELETE /api/properties/:id - Delete property (owner or admin)
-router.delete('/:id', authenticate, (req, res) => {
+router.delete('/:id', authenticate, async (req, res) => {
   const db = getDb();
-  const existing = db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
+  const existing = await db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
 
   if (!existing) {
     return res.status(404).json({ error: 'Property not found' });
@@ -243,14 +243,14 @@ router.delete('/:id', authenticate, (req, res) => {
     return res.status(403).json({ error: 'You can only delete your own properties' });
   }
 
-  db.prepare('DELETE FROM properties WHERE id = ?').run(req.params.id);
+  await db.prepare('DELETE FROM properties WHERE id = ?').run(req.params.id);
   res.json({ message: 'Property deleted successfully' });
 });
 
 // POST /api/properties/:id/images - Upload images to existing property
-router.post('/:id/images', authenticate, authorize('landlord', 'admin'), upload.array('images', 10), (req, res) => {
+router.post('/:id/images', authenticate, authorize('landlord', 'admin'), upload.array('images', 10), async (req, res) => {
   const db = getDb();
-  const existing = db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
+  const existing = await db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
 
   if (!existing) {
     return res.status(404).json({ error: 'Property not found' });
@@ -263,14 +263,14 @@ router.post('/:id/images', authenticate, authorize('landlord', 'admin'), upload.
   const currentImages = JSON.parse(existing.images || '[]');
   const allImages = [...currentImages, ...newImages];
 
-  db.prepare('UPDATE properties SET images = ?, updatedAt = datetime(\'now\') WHERE id = ?').run(JSON.stringify(allImages), req.params.id);
+  await db.prepare('UPDATE properties SET images = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(JSON.stringify(allImages), req.params.id);
   res.json({ images: allImages });
 });
 
 // GET /api/cities - Get all cities with properties
-router.get('/meta/cities', (req, res) => {
+router.get('/meta/cities', async (req, res) => {
   const db = getDb();
-  const cities = db.prepare('SELECT DISTINCT city FROM properties ORDER BY city').all();
+  const cities = await db.prepare('SELECT DISTINCT city FROM properties ORDER BY city').all();
   res.json({ cities: cities.map(c => c.city) });
 });
 

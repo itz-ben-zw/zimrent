@@ -7,14 +7,14 @@ CREATE TABLE IF NOT EXISTS users (
   passwordHash TEXT NOT NULL,
   role TEXT NOT NULL CHECK(role IN ('tenant', 'landlord', 'admin')) DEFAULT 'tenant',
   phone TEXT DEFAULT '',
-  username TEXT DEFAULT '' UNIQUE,
+  username TEXT UNIQUE,
   profileImage TEXT DEFAULT '',
   emailVerified INTEGER NOT NULL DEFAULT 0,
   phoneVerified INTEGER NOT NULL DEFAULT 0,
   authProvider TEXT DEFAULT 'email' CHECK(authProvider IN ('email','google','phone')),
   providerId TEXT DEFAULT '',
-  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
-  updatedAt TEXT NOT NULL DEFAULT (datetime('now'))
+  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS properties (
@@ -37,8 +37,8 @@ CREATE TABLE IF NOT EXISTS properties (
   phone TEXT DEFAULT '',
   email TEXT DEFAULT '',
   whatsapp TEXT DEFAULT '',
-  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
-  updatedAt TEXT NOT NULL DEFAULT (datetime('now')),
+  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (landlordId) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS applications (
   tenantId TEXT NOT NULL,
   message TEXT DEFAULT '',
   status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'accepted', 'rejected')),
-  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (propertyId) REFERENCES properties(id) ON DELETE CASCADE,
   FOREIGN KEY (tenantId) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS favorites (
   id TEXT PRIMARY KEY,
   userId TEXT NOT NULL,
   propertyId TEXT NOT NULL,
-  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (propertyId) REFERENCES properties(id) ON DELETE CASCADE,
   UNIQUE(userId, propertyId)
@@ -68,8 +68,8 @@ CREATE TABLE IF NOT EXISTS conversations (
   propertyId TEXT NOT NULL,
   landlordId TEXT NOT NULL,
   tenantId TEXT NOT NULL,
-  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
-  updatedAt TEXT NOT NULL DEFAULT (datetime('now')),
+  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (propertyId) REFERENCES properties(id) ON DELETE CASCADE,
   FOREIGN KEY (landlordId) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (tenantId) REFERENCES users(id) ON DELETE CASCADE,
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS messages (
   senderId TEXT NOT NULL,
   text TEXT NOT NULL,
   read INTEGER NOT NULL DEFAULT 0,
-  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (conversationId) REFERENCES conversations(id) ON DELETE CASCADE,
   FOREIGN KEY (senderId) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   type TEXT NOT NULL,
   message TEXT NOT NULL,
   read INTEGER NOT NULL DEFAULT 0,
-  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
   ip TEXT DEFAULT '',
   expiresAt TEXT NOT NULL,
   revoked INTEGER NOT NULL DEFAULT 0,
-  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS email_verifications (
   token TEXT NOT NULL UNIQUE,
   expiresAt TEXT NOT NULL,
   verified INTEGER NOT NULL DEFAULT 0,
-  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS password_resets (
   token TEXT NOT NULL UNIQUE,
   expiresAt TEXT NOT NULL,
   used INTEGER NOT NULL DEFAULT 0,
-  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -145,6 +145,6 @@ CREATE TABLE IF NOT EXISTS csrf_tokens (
   userId TEXT NOT NULL,
   token TEXT NOT NULL UNIQUE,
   expiresAt TEXT NOT NULL,
-  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
 );
