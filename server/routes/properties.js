@@ -146,7 +146,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
 
 // POST /api/properties - Create property (landlord/admin)
 router.post('/', authenticate, authorize('landlord', 'admin'), upload.array('images', 10), async (req, res) => {
-  const { title, description, city, suburb, type, bedrooms, bathrooms, price, currency, wifi, electricStove, gasStove, fridge, solar, borehole, fenced, customAdditions, phone, email, whatsapp } = req.body;
+  const { title, description, city, suburb, type, bedrooms, bathrooms, price, currency, wifi, electricStove, gasStove, fridge, solar, borehole, fenced, customAdditions, phone, email, whatsapp, latitude, longitude } = req.body;
 
   if (!title || !city || !suburb || !type || !price) {
     return res.status(400).json({ error: 'Title, city, suburb, type, and price are required' });
@@ -177,16 +177,19 @@ router.post('/', authenticate, authorize('landlord', 'admin'), upload.array('ima
     images: JSON.stringify(images),
     phone: phone || '',
     email: email || '',
-    whatsapp: whatsapp || ''
+    whatsapp: whatsapp || '',
+    latitude: latitude !== undefined && latitude !== null && latitude !== '' ? parseFloat(latitude) : null,
+    longitude: longitude !== undefined && longitude !== null && longitude !== '' ? parseFloat(longitude) : null
   };
 
   const db = getDb();
-  await db.prepare(`INSERT INTO properties (id, landlordId, title, description, city, suburb, type, bedrooms, bathrooms, price, currency, wifi, electricStove, gasStove, fridge, solar, borehole, fenced, customAdditions, images, phone, email, whatsapp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+  await db.prepare(`INSERT INTO properties (id, landlordId, title, description, city, suburb, type, bedrooms, bathrooms, price, currency, wifi, electricStove, gasStove, fridge, solar, borehole, fenced, customAdditions, images, phone, email, whatsapp, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
     property.id, property.landlordId, property.title, property.description, property.city, property.suburb, property.type,
     property.bedrooms, property.bathrooms, property.price, property.currency,
     property.wifi, property.electricStove, property.gasStove, property.fridge,
     property.solar, property.borehole, property.fenced,
-    property.customAdditions, property.images, property.phone, property.email, property.whatsapp
+    property.customAdditions, property.images, property.phone, property.email, property.whatsapp,
+    property.latitude, property.longitude
   );
 
   res.status(201).json({
@@ -210,9 +213,9 @@ router.put('/:id', authenticate, async (req, res) => {
     return res.status(403).json({ error: 'You can only edit your own properties' });
   }
 
-  const { title, description, city, suburb, type, bedrooms, bathrooms, price, currency, wifi, electricStove, gasStove, fridge, solar, borehole, fenced, customAdditions, phone, email, whatsapp } = req.body;
+  const { title, description, city, suburb, type, bedrooms, bathrooms, price, currency, wifi, electricStove, gasStove, fridge, solar, borehole, fenced, customAdditions, phone, email, whatsapp, latitude, longitude } = req.body;
 
-  await db.prepare(`UPDATE properties SET title = ?, description = ?, city = ?, suburb = ?, type = ?, bedrooms = ?, bathrooms = ?, price = ?, currency = ?, wifi = ?, electricStove = ?, gasStove = ?, fridge = ?, solar = ?, borehole = ?, fenced = ?, customAdditions = ?, phone = ?, email = ?, whatsapp = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`).run(
+  await db.prepare(`UPDATE properties SET title = ?, description = ?, city = ?, suburb = ?, type = ?, bedrooms = ?, bathrooms = ?, price = ?, currency = ?, wifi = ?, electricStove = ?, gasStove = ?, fridge = ?, solar = ?, borehole = ?, fenced = ?, customAdditions = ?, phone = ?, email = ?, whatsapp = ?, latitude = ?, longitude = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`).run(
     title || existing.title,
     description !== undefined ? description : existing.description,
     city || existing.city,
@@ -233,6 +236,8 @@ router.put('/:id', authenticate, async (req, res) => {
     phone !== undefined ? phone : existing.phone,
     email !== undefined ? email : existing.email,
     whatsapp !== undefined ? whatsapp : existing.whatsapp,
+    latitude !== undefined && latitude !== null && latitude !== '' ? parseFloat(latitude) : existing.latitude,
+    longitude !== undefined && longitude !== null && longitude !== '' ? parseFloat(longitude) : existing.longitude,
     req.params.id
   );
 

@@ -147,7 +147,9 @@ async function handleListingSubmit(e) {
     images,
     phone: document.getElementById('inp-phone').value,
     email: document.getElementById('inp-email').value,
-    whatsapp: document.getElementById('inp-whatsapp').value
+    whatsapp: document.getElementById('inp-whatsapp').value,
+    latitude: document.getElementById('inp-latitude') ? document.getElementById('inp-latitude').value : null,
+    longitude: document.getElementById('inp-longitude') ? document.getElementById('inp-longitude').value : null
   };
   
   try {
@@ -214,6 +216,7 @@ async function initAddListing() {
   
   populateAddFormHelpers();
   initImageUpload();
+  initMapPicker();
   
   if (editId) {
     editingId = editId;
@@ -270,6 +273,85 @@ function populateAddFormHelpers() {
       opt.textContent = t;
       typeSelect.appendChild(opt);
     });
+  }
+}
+
+let _pickerMap = null;
+let _pickerMarker = null;
+
+// Initialise the Leaflet map picker on the add/edit listing form.
+function initMapPicker() {
+  const mapEl = document.getElementById('picker-map');
+  if (!mapEl || typeof L === 'undefined') return;
+
+  const suburbSelect = document.getElementById('inp-suburb');
+  const startCoords = suburbSelect && suburbSelect.value && typeof getSuburbCoords === 'function'
+    ? getSuburbCoords(suburbSelect.value)
+    : (typeof DEFAULT_CITY_COORDS !== 'undefined' ? DEFAULT_CITY_COORDS : { lat: -20.15, lng: 28.58 });
+
+  _pickerMap = L.map('picker-map').setView([startCoords.lat, startCoords.lng], 14);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(_pickerMap);
+
+  _pickerMarker = L.marker([startCoords.lat, startCoords.lng], { draggable: true }).addTo(_pickerMap);
+
+  // Click anywhere to move the pin.
+  _pickerMap.on('click', (e) => setPickerCoords(e.latlng.lat, e.latlng.lng));
+  // Dragging the pin updates the coords too.
+  _pickerMarker.on('dragend', (e) => {
+    const ll = e.target.getLatLng();
+    setPickerCoords(ll.lat, ll.lng);
+  });
+
+  // Re-centre the pin when the suburb changes.
+  if (suburbSelect) {
+    suburbSelect.addEventListener('change', () => {
+      if (!suburbSelect.value || typeof getSuburbCoords !== 'function') return;
+      const c = getSuburbCoords(suburbSelect.value);
+      _pickerMap.setView([c.lat, c.lng], 15);
+      setPickerCoords(c.lat, c.lng);
+    });
+  }
+
+  // "Reset to suburb centre" button.
+  const resetBtn = document.getElementById('reset-pin-btn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      const suburb = suburbSelect ? suburbSelect.value : '';
+      const c = typeof getSuburbCoords === 'function' ? getSuburbCoords(suburb) : DEFAULT_CITY_COORDS;
+      _pickerMap.setView([c.lat, c.lng], 15);
+      setPickerCoords(c.lat, c.lng);
+    });
+  }
+
+  // Set the initial pin + hidden fields.
+  setPickerCoords(startCoords.lat, startCoords.lng);
+
+  setTimeout(() => _pickerMap && _pickerMap.invalidateSize(), 200);
+}
+
+// Move the picker pin to (lat, lng), update hidden inputs + readout.
+function setPickerCoords(lat, lng) {
+  const latNum = parseFloat(lat);
+  const lngNum = parseFloat(lng);
+  if (isNaN(latNum) || isNaN(lngNum)) return;
+
+  if (_pickerMarker && _pickerMap) {
+    _pickerMarker.setLatLng([latNum, lngNum]);
+  }
+
+  const latInput = document.getElementById('inp-latitude');
+  const lngInput = document.getElementById('inp-longitude');
+  if (latInput) latInput.value = latNum;
+  if (lngInput) lngInput.value = lngNum;
+
+  const readout = document.getElementById('picker-coords');
+  if (readout) {
+    readout.innerHTML = '<i class="fas fa-map-pin" style="color:var(--primary);"></i> ' +
+      latNum.toFixed(5) + ', ' + lngNum.toFixed(5);
   }
 }
 
@@ -350,6 +432,17 @@ function prefillForm(listing) {
   document.getElementById('inp-whatsapp').value = listing.whatsapp || '';
   window._tempImages = [...(listing.images || [])];
   renderUploadPreview();
+
+  // Restore the map pin if the property already has coordinates.
+  if (typeof setPickerCoords === 'function') {
+    if (listing.latitude !== null && listing.latitude !== undefined &&
+        listing.longitude !== null && listing.longitude !== undefined) {
+      setPickerCoords(parseFloat(listing.latitude), parseFloat(listing.longitude));
+    } else if (typeof getSuburbCoords === 'function') {
+      const c = getSuburbCoords(listing.suburb);
+      setPickerCoords(c.lat, c.lng);
+    }
+  }
 }
 
 function escapeHtml(text) {

@@ -56,6 +56,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('detail-custom').textContent = p.customAdditions;
     }
 
+    // Location map
+    initLocationMap(p);
+
     // Images
     const hero = document.getElementById('detail-hero');
     const thumbs = document.getElementById('thumbnail-container');
@@ -140,6 +143,55 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.href = 'listings.html';
   }
 });
+
+function initLocationMap(p) {
+  const section = document.getElementById('location-section');
+  const mapEl = document.getElementById('location-map');
+  if (!section || !mapEl) return;
+
+  // Determine the pin. Use stored coords if present, otherwise
+  // fall back to an approximate centre for the suburb.
+  let coords = null;
+  if (p.latitude !== null && p.latitude !== undefined &&
+      p.longitude !== null && p.longitude !== undefined) {
+    coords = { lat: parseFloat(p.latitude), lng: parseFloat(p.longitude) };
+  } else if (typeof getSuburbCoords === 'function') {
+    coords = getSuburbCoords(p.suburb);
+  }
+
+  // Area label, e.g. "Selbourne Park, Bulawayo, Zimbabwe"
+  const areaLabel = [p.suburb, p.city, 'Zimbabwe'].filter(Boolean).join(', ');
+  document.getElementById('location-area').innerHTML =
+    '<i class="fas fa-map-pin" style="color:var(--primary);"></i> ' + escapeHtml(areaLabel);
+
+  if (!coords || typeof L === 'undefined') {
+    // No coordinates or Leaflet failed to load — keep the label + note.
+    mapEl.style.display = 'none';
+    document.querySelector('.location-map-wrap').style.display = 'none';
+    return;
+  }
+
+  // Wire up the "Open in Maps" deep link.
+  document.getElementById('location-open-maps').href = googleMapsLink(coords.lat, coords.lng);
+
+  const map = L.map('location-map', {
+    scrollWheelZoom: false,
+    zoomControl: false
+  }).setView([coords.lat, coords.lng], 15);
+
+  L.control.zoom({ position: 'topright' }).addTo(map);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  const marker = L.marker([coords.lat, coords.lng], { draggable: false }).addTo(map);
+  marker.bindPopup('<strong>' + escapeHtml(p.title) + '</strong><br>' + escapeHtml(areaLabel)).openPopup();
+
+  // Leaflet needs a nudge once the (previously hidden) map is laid out.
+  setTimeout(() => map.invalidateSize(), 200);
+}
 
 function escapeHtml(text) {
   if (!text) return '';

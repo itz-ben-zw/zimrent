@@ -692,6 +692,35 @@ button { cursor: pointer; font-family: inherit; }
 .footer-links a { color: #ccc; transition: color 0.2s; }
 .footer-links a:hover { color: white; }
 
+/* Location map (property detail) */
+.location-section { margin-top: 2rem; }
+.location-heading { font-size: 1.3rem; color: var(--text-dark); }
+.location-area {
+    display: flex; align-items: center; gap: 0.4rem;
+    color: var(--text-muted); font-size: 0.95rem; margin-bottom: 0.9rem;
+}
+.location-map-wrap {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 18px rgba(13, 127, 214, 0.10);
+}
+#location-map, #picker-map { width: 100%; height: 340px; z-index: 1; background: #e8eef5; }
+.picker-map-wrap { margin-top: 0.2rem; }
+#picker-map { height: 300px; }
+.location-open-maps {
+    position: absolute; top: 10px; left: 10px; z-index: 1000;
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: #fff; color: #1a73e8; font-weight: 600; font-size: 0.85rem;
+    padding: 0.45rem 0.8rem; border-radius: 8px; text-decoration: none;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.25); transition: transform 0.15s, box-shadow 0.15s;
+}
+.location-open-maps:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.3); }
+.location-note {
+    margin-top: 0.6rem; font-size: 0.82rem; color: var(--text-muted);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .nav-links { display: none; }
