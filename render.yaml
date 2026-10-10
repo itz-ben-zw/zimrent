@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: homify
+    name: homify-nust
     runtime: node
     branch: main
     rootDir: server
