@@ -4,6 +4,7 @@ services:
     runtime: node
     branch: main
     rootDir: server
+    plan: free
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/properties
