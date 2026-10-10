@@ -28,23 +28,50 @@
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
     camera.position.set(0, 0, 14);
 
-    /* Lights — bright, glossy, logo-like */
-    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-    const keyLight = new THREE.DirectionalLight(0xffffff, 0.9);
+    /* Lights — moody, with a neon key so emissive shapes pop on dark */
+    scene.add(new THREE.AmbientLight(0x8899bb, 0.55));
+    const keyLight = new THREE.DirectionalLight(0xbfe6ff, 0.85);
     keyLight.position.set(5, 8, 6);
     scene.add(keyLight);
-    const rimLight = new THREE.DirectionalLight(0x9fd8ff, 0.55);
+    const rimLight = new THREE.DirectionalLight(0x6fc0ff, 0.7);
     rimLight.position.set(-6, -3, 4);
     scene.add(rimLight);
 
-    /* Brand materials */
+    /* Brand materials — emissive/neon tuned for a dark scene */
     const MAT = {
-        white: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.35, metalness: 0.05 }),
-        azure: new THREE.MeshStandardMaterial({ color: 0x29a8f5, roughness: 0.30, metalness: 0.10 }),
-        deep: new THREE.MeshStandardMaterial({ color: 0x0d7fd6, roughness: 0.35, metalness: 0.10 }),
-        pale: new THREE.MeshStandardMaterial({ color: 0xcfeaff, roughness: 0.40, metalness: 0.00 }),
-        wire: new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.22 })
+        white: new THREE.MeshStandardMaterial({ color: 0xeaf2ff, roughness: 0.25, metalness: 0.10, emissive: 0x0a2a44, emissiveIntensity: 0.6 }),
+        azure: new THREE.MeshStandardMaterial({ color: 0x29a8f5, roughness: 0.25, metalness:0.15, emissive: 0x0d5a8f, emissiveIntensity: 0.9 }),
+        deep: new THREE.MeshStandardMaterial({ color: 0x1f6fd0, roughness: 0.30, metalness: 0.15, emissive: 0x08213d, emissiveIntensity: 0.7 }),
+        pale: new THREE.MeshStandardMaterial({ color: 0x9fd8ff, roughness: 0.30, metalness: 0.00, emissive: 0x1b4d78, emissiveIntensity: 0.6 }),
+        wire: new THREE.MeshBasicMaterial({ color: 0x56ccf2, wireframe: true, transparent: true, opacity: 0.35 })
     };
+
+    /* ---- OKX-style atmosphere: starfield dust + slow orbit ring ---- */
+    // Starfield: tiny cyan points drifting behind the shapes.
+    let starfield = null;
+    if (!prefersReduced) {
+        const starCount = isMobile() ? 60 : 140;
+        const positions = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount; i++) {
+            positions[i * 3]     = (Math.random() - 0.5) * 26;
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 16;
+            positions[i * 3 + 2] = -2 - Math.random() * 10;
+        }
+        const starGeo = new THREE.BufferGeometry();
+        starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const starMat = new THREE.PointsMaterial({ color: 0x56ccf2, size: 0.06, transparent: true, opacity: 0.7 });
+        starfield = new THREE.Points(starGeo, starMat);
+        scene.add(starfield);
+    }
+
+    // Orbit ring: a large slow-spinning torus framing the whole scene.
+    const orbit = new THREE.Mesh(
+        new THREE.TorusGeometry(7.5, 0.03, 8, 128),
+        new THREE.MeshBasicMaterial({ color: 0x2a8fe0, transparent: true, opacity: 0.5 })
+    );
+    orbit.position.z = -6;
+    orbit.rotation.x = Math.PI / 2.4;
+    scene.add(orbit);
 
     /* House — echoes the logo (body + roof + door) */
     function makeHouse(bodyMat, roofMat) {
@@ -161,6 +188,10 @@
         camera.position.x = mouse.x * 1.6;
         camera.position.y = mouse.y * 1.0;
         camera.lookAt(0, 0, 0);
+
+        // Slow ambient motion for atmosphere
+        orbit.rotation.z += dt * 0.08;
+        if (starfield) starfield.rotation.y += dt * 0.01;
 
         objects.forEach(o => {
             if (!o.mesh.visible) return;

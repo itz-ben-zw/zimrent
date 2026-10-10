@@ -32,6 +32,32 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
+// Security headers (lightweight, no extra dependency).
+// CSP allows our own origin + the CDNs we actually use (cdnjs for Font Awesome
+// & three.js, unpkg for Leaflet, gstatic/accounts.google for Sign-In,
+// tile.openstreetmap.org for map tiles, and data: for inline images).
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(self), camera=(), microphone=()');
+  res.setHeader(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com https://accounts.google.com https://apis.google.com https://www.googletagmanager.com",
+      "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com https://accounts.google.com https://fonts.googleapis.com",
+      "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:",
+      "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://www.gstatic.com https://www.googletagmanager.com",
+      "connect-src 'self' https://accounts.google.com https://www.google-analytics.com https://region1.google-analytics.com",
+      "frame-src https://accounts.google.com",
+      "object-src 'none'",
+      "base-uri 'self'"
+    ].join('; ')
+  );
+  next();
+});
+
 // Trust first proxy so rate limiter works behind Render's load balancer
 app.set('trust proxy', 1);
 
@@ -57,9 +83,14 @@ app.use('/api/admin', adminRoutes);
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, '..')));
 
-// All other routes -> index.html for SPA-like fallback
+// Catch-all: real pages resolve above via express.static. Anything unmatched
+// that isn't an API route gets our custom 404 page with a proper 404 status
+// (better UX + correct signalling to crawlers than silently serving index).
 app.get('*', async (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'index.html'));
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  res.status(404).sendFile(path.join(__dirname, '..', '404.html'));
 });
 
 // Initialize database and create admin user

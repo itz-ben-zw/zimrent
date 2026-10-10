@@ -155,7 +155,7 @@ async function sendOTP() {
     document.getElementById('phone-step-2').style.display = 'block';
     document.getElementById('otp-phone-display').textContent = phone;
     if (data.debug) {
-      console.log('📱 OTP for debugging:', data.debug);
+      console.log('OTP for debugging:', data.debug);
       document.getElementById('login-otp').placeholder = `Debug: ${data.debug}`;
     }
   } catch (err) {

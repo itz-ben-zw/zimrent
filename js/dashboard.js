@@ -156,20 +156,25 @@ async function handleListingSubmit(e) {
     const res = await fetch(url, { method, headers, body: JSON.stringify(body) });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      alert('Failed to save listing: ' + (err.error || 'Unknown error'));
+      if (window.toast) toast.error('Failed to save listing: ' + (err.error || 'Unknown error'));
+      else alert('Failed to save listing: ' + (err.error || 'Unknown error'));
       return;
     }
-    
+
     window._tempImages = [];
     const btn = document.querySelector('.form-card button[type="submit"]');
-    btn.textContent = '✓ Saved!';
-    btn.style.background = 'var(--accent)';
-    
+    btn.disabled = true;
+    btn.textContent = 'Saved';
+    btn.style.background = 'var(--accent-dark)';
+
+    if (window.toast) toast.success('Your listing has been submitted.');
+
     setTimeout(() => {
-      window.location.href = 'dashboard.html';
-    }, 1000);
+      window.location.href = 'thank-you.html';
+    }, 900);
   } catch (err) {
-    alert('Error saving listing: ' + err.message);
+    if (window.toast) toast.error('Error saving listing: ' + err.message);
+    else alert('Error saving listing: ' + err.message);
   }
 }
 
@@ -199,10 +204,13 @@ async function confirmDelete(id) {
   
   const res = await fetch(`/api/properties/${id}`, { method: 'DELETE', headers });
   if (!res.ok) {
-    alert('Failed to delete listing');
+    if (window.toast) toast.error('Failed to delete listing');
+    else alert('Failed to delete listing');
     return;
   }
-  
+
+  if (window.toast) toast.success('Listing deleted.');
+
   const currentUserId = getCurrentUserId();
   const listings = await fetchListings(currentUserId);
   renderStats(listings);

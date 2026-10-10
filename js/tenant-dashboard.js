@@ -100,9 +100,9 @@ function renderApplications(apps) {
         <tbody>
           ${apps.map(a => {
             let statusBadge, statusColor;
-            if (a.status === 'pending') { statusBadge = '⏳ Pending'; statusColor = '#f0ad4e'; }
-            else if (a.status === 'accepted') { statusBadge = '✅ Accepted'; statusColor = 'var(--accent)'; }
-            else { statusBadge = '❌ Rejected'; statusColor = 'var(--danger)'; }
+            if (a.status === 'pending') { statusBadge = '<i class="fas fa-clock" style="margin-right:4px;"></i>Pending'; statusColor = '#f0ad4e'; }
+            else if (a.status === 'accepted') { statusBadge = '<i class="fas fa-check-circle" style="margin-right:4px;"></i>Accepted'; statusColor = 'var(--accent)'; }
+            else { statusBadge = '<i class="fas fa-times-circle" style="margin-right:4px;"></i>Rejected'; statusColor = 'var(--danger)'; }
 
             return `
               <tr style="border-bottom:1px solid var(--border);">
@@ -139,7 +139,7 @@ function renderMessagePreview(convs) {
   if (convs.length === 0) return;
 
   container.innerHTML = convs.slice(0, 5).map(c => `
-    <div role="button" tabindex="0" style="display:flex; align-items:center; gap:1rem; padding:0.8rem 1rem; border-bottom:1px solid var(--border); cursor:pointer; ${c.unreadCount > 0 ? 'background:#f0f7ff;' : ''}" onclick="sessionStorage.setItem('current_conversation_id','${c.id}'); window.location.href='chat.html';" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sessionStorage.setItem('current_conversation_id','${c.id}');window.location.href='chat.html';}">
+    <div role="button" tabindex="0" style="display:flex; align-items:center; gap:1rem; padding:0.8rem 1rem; border-bottom:1px solid var(--border); cursor:pointer; ${c.unreadCount > 0 ? 'background:var(--surface-2);' : ''}" onclick="sessionStorage.setItem('current_conversation_id','${c.id}'); window.location.href='chat.html';" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sessionStorage.setItem('current_conversation_id','${c.id}');window.location.href='chat.html';}">
       <div style="width:40px; height:40px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; color:white; font-weight:700;">
         ${(c.landlordName || 'L')[0].toUpperCase()}
       </div>

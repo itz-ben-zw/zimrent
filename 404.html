@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found — Homify</title>
+    <meta name="description" content="The page you were looking for could not be found on Homify.">
+    <meta name="robots" content="noindex, follow">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <a href="#main" class="skip-link">Skip to main content</a>
+
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">Homi<span>fy</span></a>
+        <button class="menu-toggle" aria-label="Open navigation menu">☰</button>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="listings.html">Browse</a></li>
+            <li><a href="login.html">Sign In</a></li>
+            <li><a href="add-listing.html" class="nav-cta">List Property</a></li>
+        </ul>
+    </nav>
+
+    <main id="main" class="container" style="text-align:center; padding-top:4rem; padding-bottom:5rem; max-width:640px;">
+        <div style="font-size:5rem; color:var(--primary); margin-bottom:1rem;">
+            <i class="fas fa-compass"></i>
+        </div>
+        <h1 style="font-size:2.4rem; margin-bottom:0.6rem;">Page not found</h1>
+        <p style="color:var(--text-muted); font-size:1.1rem; margin-bottom:2rem;">
+            Sorry, we couldn't find the page you were looking for. It may have moved,
+            or the link may be out of date.
+        </p>
+        <div class="btn-group" style="justify-content:center;">
+            <a href="index.html" class="btn btn-primary btn-lg"><i class="fas fa-home" style="margin-right:6px;"></i>Back to Home</a>
+            <a href="listings.html" class="btn btn-outline btn-lg"><i class="fas fa-search" style="margin-right:6px;"></i>Browse Listings</a>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="index.html">Home</a>
+            <a href="listings.html">Browse Listings</a>
+            <a href="add-listing.html">List Property</a>
+        </div>
+        <div class="footer-legal">
+            <a href="privacy.html">Privacy</a>
+            <a href="terms.html">Terms</a>
+            <a href="cookies.html">Cookies</a>
+            <a href="refunds.html">Refund Policy</a>
+        </div>
+        <p style="color:#aaa; font-size:0.85rem; margin-top:1rem;">&copy; <span class="js-year">2026</span> Homify. Operated in Bulawayo, Zimbabwe.</p>
+    </footer>
+
+    <script src="js/app.js?v=3"></script>
+    <script src="js/analytics.js?v=1"></script>
+    <script src="js/cookie-consent.js?v=1"></script>
+    <script>
+        document.querySelectorAll('.js-year').forEach(function (el) {
+            el.textContent = new Date().getFullYear();
+        });
+    </script>
+</body>
+</html>

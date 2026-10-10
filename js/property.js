@@ -107,12 +107,15 @@ document.addEventListener('DOMContentLoaded', async () => {
           });
           const applyData = await applyRes.json();
           if (!applyRes.ok) {
-            alert(applyData.error || 'Application failed');
+            if (window.toast) toast.error(applyData.error || 'Application failed');
+            else alert(applyData.error || 'Application failed');
             return;
           }
-          alert('Application submitted successfully!');
+          if (window.toast) toast.success('Application submitted successfully.');
+          else alert('Application submitted successfully!');
         } catch (err) {
-          alert('Error submitting application: ' + err.message);
+          if (window.toast) toast.error('Error submitting application: ' + err.message);
+          else alert('Error submitting application: ' + err.message);
         }
       });
 
@@ -127,19 +130,22 @@ document.addEventListener('DOMContentLoaded', async () => {
           });
           const convData = await convRes.json();
           if (!convRes.ok) {
-            alert(convData.error || 'Failed to open conversation');
+            if (window.toast) toast.error(convData.error || 'Failed to open conversation');
+            else alert(convData.error || 'Failed to open conversation');
             return;
           }
           sessionStorage.setItem('current_conversation_id', convData.conversation.id);
           window.location.href = 'chat.html';
         } catch (err) {
-          alert('Error opening conversation: ' + err.message);
+          if (window.toast) toast.error('Error opening conversation: ' + err.message);
+          else alert('Error opening conversation: ' + err.message);
         }
       });
     }
   } catch (err) {
     console.error(err);
-    alert('Failed to load property details.');
+    if (window.toast) toast.error('Failed to load property details.');
+    else alert('Failed to load property details.');
     window.location.href = 'listings.html';
   }
 });

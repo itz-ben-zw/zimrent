@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="light">
+    <meta name="color-scheme" content="dark">
     <title>Property Details - Homify</title>
     <meta name="robots" content="index, follow">
     <meta name="description" content="View details, photos, amenities and location for this student accommodation near NUST in Bulawayo. Contact the landlord directly on Homify.">
@@ -13,11 +13,11 @@
     <meta property="og:title" content="Property Details - Homify">
     <meta property="og:description" content="View details, photos, amenities and location for this student accommodation near NUST in Bulawayo. Contact the landlord directly on Homify.">
     <meta property="og:url" content="https://homify.onrender.com/property.html">
-    <meta property="og:image" content="https://homify.onrender.com/assets/og-image.png">
+    <meta property="og:image" content="https://homify.onrender.com/assets/og-image.jpg">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Property Details - Homify">
     <meta name="twitter:description" content="View details, photos, amenities and location for this student accommodation near NUST in Bulawayo. Contact the landlord directly on Homify.">
-    <meta name="twitter:image" content="https://homify.onrender.com/assets/og-image.png">
+    <meta name="twitter:image" content="https://homify.onrender.com/assets/og-image.jpg">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -70,7 +70,7 @@
                 <div class="detail-location" id="detail-location">City, Suburb</div>
 
                 <!-- Price -->
-                <div id="detail-price" style="margin:1rem 0; padding:0.8rem; background:#f0f7ff; border-radius:8px; display:inline-block;">
+                <div id="detail-price" style="margin:1rem 0; padding:0.8rem; background:var(--surface-2); border-radius:8px; display:inline-block;">
                 </div>
 
                 <!-- Meta -->
@@ -91,8 +91,8 @@
                 </div>
 
                 <!-- Custom Additions -->
-                <div id="detail-custom-section" style="margin-top:2rem; padding:1.2rem; background:#eaf5ff; border-radius:8px; border-left:4px solid var(--secondary); display:none;">
-                    <h3 style="margin-bottom:0.5rem; color:var(--text-dark);"><i class="fas fa-sticky-note" style="color:var(--secondary);"></i> Landlord's Notes</h3>
+                <div id="detail-custom-section" style="margin-top:2rem; padding:1.2rem; background:var(--surface-2); border-radius:8px; border-left:4px solid var(--secondary); display:none;">
+                    <h3 style="margin-bottom:0.5rem; color:var(--text);"><i class="fas fa-sticky-note" style="color:var(--secondary);"></i> Landlord's Notes</h3>
                     <p id="detail-custom" style="line-height:1.8;"></p>
                 </div>
 
@@ -154,6 +154,8 @@
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="js/geo.js?v=3"></script>
     <script src="js/property.js?v=3"></script>
+    <script src="js/toast.js?v=1"></script>
+    <script src="js/analytics.js?v=1"></script>
     <script src="js/cookie-consent.js?v=1"></script>
 </body>
 </html>

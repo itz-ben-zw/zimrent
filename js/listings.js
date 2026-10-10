@@ -37,7 +37,28 @@ async function fetchListingsFromAPI() {
   return data.properties || [];
 }
 
+function showListingSkeletons(count) {
+  const grid = document.getElementById('listings-grid');
+  if (!grid) return;
+  const n = count || 6;
+  let html = '';
+  for (let i = 0; i < n; i++) {
+    html += `
+      <div class="skeleton-card" aria-hidden="true">
+        <div class="sk-img skeleton"></div>
+        <div class="sk-body">
+          <div class="sk-line w40 skeleton"></div>
+          <div class="sk-line w80 skeleton"></div>
+          <div class="sk-line w60 skeleton"></div>
+        </div>
+      </div>`;
+  }
+  grid.innerHTML = html;
+}
+
 function initListingsPage() {
+  // Show loading placeholders immediately, before data arrives.
+  showListingSkeletons(6);
   fetchListingsFromAPI().then(listings => {
     populateSuburbs();
     populateBedrooms();
