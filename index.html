@@ -4,12 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light">
-    <title>Homify — Student Accommodation for NUST</title>
+    <title>Homify - Student Accommodation Near NUST in Bulawayo</title>
+    <meta name="robots" content="index, follow">
+    <meta name="description" content="Find student accommodation near NUST in Bulawayo. Browse rooms in Selbourne Park, Riverside and Matsheumhlope. Contact landlords directly - Homify is free.">
+    <link rel="canonical" href="https://homify.onrender.com/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Homify">
+    <meta property="og:title" content="Homify - Student Accommodation Near NUST in Bulawayo">
+    <meta property="og:description" content="Find student accommodation near NUST in Bulawayo. Browse rooms in Selbourne Park, Riverside and Matsheumhlope. Contact landlords directly - Homify is free.">
+    <meta property="og:url" content="https://homify.onrender.com/">
+    <meta property="og:image" content="https://homify.onrender.com/assets/favicon.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Homify - Student Accommodation Near NUST in Bulawayo">
+    <meta name="twitter:description" content="Find student accommodation near NUST in Bulawayo. Browse rooms in Selbourne Park, Riverside and Matsheumhlope. Contact landlords directly - Homify is free.">
+    <meta name="twitter:image" content="https://homify.onrender.com/assets/favicon.png">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
     <!-- Navbar -->
     <nav class="navbar">
         <a href="index.html" class="nav-brand">Homi<span>fy</span></a>
@@ -25,14 +39,14 @@
             <li><a href="#" id="nav-logout" style="display:none;" onclick="logout(); return false;">Logout</a></li>
             <li><span id="nav-user-info" style="display:none; font-weight:600; color:var(--primary); cursor:pointer;"></span></li>
         </ul>
-        <button class="menu-toggle">☰</button>
+        <button class="menu-toggle" aria-label="Open navigation menu" aria-expanded="false"☰</button>
     </nav>
-
+    <main id="main">
     <!-- Hero -->
     <section class="hero">
         <canvas id="hero-canvas" aria-hidden="true"></canvas>
         <h1>Find Your Accommodation in Bulawayo</h1>
-        <p>Student accommodation across Selbourne Park, Riverside, Matsheumhlope, and more. Direct contact with landlords, no middlemen fees.</p>
+        <p>Student accommodation across Selbourne Park, Riverside, Matsheumhlope, and more. Contact landlords directly — Homify charges no fees.</p>
         
         <div class="search-box">
             <input type="text" class="search-input" id="hero-city" placeholder="Search by suburb..." aria-label="Search by suburb">
@@ -59,8 +73,8 @@
                 <div class="stat-label">Suburbs Covered</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">24/7</div>
-                <div class="stat-label">Direct Contact</div>
+                <div class="stat-number">Direct</div>
+                <div class="stat-label">Landlord Contact</div>
             </div>
         </div>
     </div>
@@ -69,7 +83,7 @@
     <div class="container">
         <div class="section-header">
             <h2>Featured Properties</h2>
-            <p>Handpicked rentals with great amenities</p>
+            <p>Latest student accommodation listings</p>
         </div>
         <div class="property-grid" id="featured-grid">
             <!-- Populated by JS -->
@@ -94,22 +108,23 @@
             <div style="background:white; padding:1.8rem; border-radius:12px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
                 <div style="font-size:2.5rem; margin-bottom:1rem;"><i class="fas fa-phone" style="color:var(--primary);"></i></div>
                 <h3>Direct Contact</h3>
-                <p style="color:var(--text-muted);">Reach landlords via phone, WhatsApp, or email — no middlemen.</p>
+                <p style="color:var(--text-muted);">Reach landlords via phone, WhatsApp, or email — straight from each listing.</p>
             </div>
             <div style="background:white; padding:1.8rem; border-radius:12px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
                 <div style="font-size:2.5rem; margin-bottom:1rem;"><i class="fas fa-camera" style="color:var(--primary);"></i></div>
                 <h3>Real Photos</h3>
-                <p style="color:var(--text-muted);">Landlords upload actual property photos. See exactly what you're getting.</p>
+                <p style="color:var(--text-muted);">Landlords upload photos of their own properties for you to view.</p>
             </div>
             <div style="background:white; padding:1.8rem; border-radius:12px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
                 <div style="font-size:2.5rem; margin-bottom:1rem;"><i class="fas fa-map-marker-alt" style="color:var(--primary);"></i></div>
                 <h3>NUST Focused</h3>
-                <p style="color:var(--text-muted);">Built for NUST students — find accommodation near campus, in your budget.</p>
+                <p style="color:var(--text-muted);">Made for NUST students — find accommodation near campus by suburb and budget.</p>
             </div>
         </div>
     </div>
 
     <!-- Footer -->
+    </main>
     <footer class="footer">
         <p style="font-weight:700; font-size:1.1rem;">Homi<span style="color:var(--secondary);">fy</span></p>
         <div class="footer-links">
@@ -120,10 +135,16 @@
         </div>
         <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1); color:#ccc; font-size:0.9rem;">
             <div style="margin-bottom:0.4rem;"><i class="fas fa-envelope" style="width:20px;"></i> <a href="mailto:homify.online@gmail.com" style="color:#ccc;">homify.online@gmail.com</a></div>
-            <div style="margin-bottom:0.4rem;"><i class="fas fa-phone" style="width:20px;"></i> +263 71 080 2153</div>
-            <div><i class="fas fa-phone" style="width:20px;"></i> +27 61 815 5957</div>
+            <div style="margin-bottom:0.4rem;"><i class="fas fa-phone" style="width:20px;"></i> Zimbabwe: +263 71 080 2153</div>
+            <div><i class="fas fa-phone" style="width:20px;"></i> South Africa: +27 61 815 5957</div>
         </div>
-        <p style="color:#aaa; font-size:0.85rem; margin-top:1rem;">© 2025 Homify. Built for NUST.</p>
+        <div class="footer-legal">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms &amp; Conditions</a>
+            <a href="cookies.html">Cookie Policy</a>
+            <a href="refunds.html">Refund Policy</a>
+        </div>
+        <p style="color:#aaa; font-size:0.85rem; margin-top:1rem;">© <span class="js-year">2026</span> Homify. Operated in Bulawayo, Zimbabwe. All rights reserved.</p>
     </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
@@ -192,7 +213,7 @@
         
         function renderCardHTML(l) {
             return `
-            <div class="property-card" onclick="viewProperty('${l.id}')">
+            <div class="property-card" role="button" tabindex="0" onclick="viewProperty('${l.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();viewProperty('${l.id}');}">
                 <div class="card-img">
                     ${l.images && l.images.length > 0 
                         ? `<img src="${l.images[0].data}" alt="${escapeHtml(l.title)}">` 
@@ -214,7 +235,7 @@
                         ${l.fenced ? '<span class="amenity-badge yes">Fenced</span>' : ''}
                         <span class="amenity-badge">Room for ${l.bedrooms}</span>
                     </div>
-                    <button class="card-action">View Details</button>
+                    <span class="card-action" aria-hidden="true">View Details</span>
                 </div>
             </div>`;
         }
@@ -226,5 +247,6 @@
         
         document.addEventListener('DOMContentLoaded', initHomePage);
     </script>
+    <script src="js/cookie-consent.js?v=1"></script>
 </body>
 </html>

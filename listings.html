@@ -4,12 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light">
-    <title>Browse Listings — Homify</title>
+    <title>Browse Student Accommodation Near NUST - Homify</title>
+    <meta name="robots" content="index, follow">
+    <meta name="description" content="Search available student rooms and houses near NUST in Bulawayo. Filter by suburb, price, room size and amenities. Free to browse on Homify.">
+    <link rel="canonical" href="https://homify.onrender.com/listings.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Homify">
+    <meta property="og:title" content="Browse Student Accommodation Near NUST - Homify">
+    <meta property="og:description" content="Search available student rooms and houses near NUST in Bulawayo. Filter by suburb, price, room size and amenities. Free to browse on Homify.">
+    <meta property="og:url" content="https://homify.onrender.com/listings.html">
+    <meta property="og:image" content="https://homify.onrender.com/assets/favicon.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Browse Student Accommodation Near NUST - Homify">
+    <meta name="twitter:description" content="Search available student rooms and houses near NUST in Bulawayo. Filter by suburb, price, room size and amenities. Free to browse on Homify.">
+    <meta name="twitter:image" content="https://homify.onrender.com/assets/favicon.png">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
     <!-- Navbar -->
     <nav class="navbar">
         <a href="index.html" class="nav-brand">Homi<span>fy</span></a>
@@ -26,9 +40,9 @@
             <li><a href="#" id="nav-logout" style="display:none;" onclick="logout(); return false;">Logout</a></li>
             <li><span id="nav-user-info" style="display:none; font-weight:600; color:var(--primary); cursor:pointer;"></span></li>
         </ul>
-        <button class="menu-toggle">☰</button>
+        <button class="menu-toggle" aria-label="Open navigation menu" aria-expanded="false"☰</button>
     </nav>
-
+    <main id="main">
     <!-- Page Header -->
     <div class="container" style="padding-top:2rem; padding-bottom:0.5rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
@@ -122,16 +136,17 @@
             </aside>
 
             <!-- Listings Grid -->
-            <main>
+            <div class="listings-main">
                 <div class="property-grid" id="listings-grid">
                     <!-- Populated by JS -->
                 </div>
-            </main>
+            </div>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer class="footer" style="margin-top:3rem;">
+        </main>
+<footer class="footer" style="margin-top:3rem;">
         <p style="font-weight:700; font-size:1.1rem;">Homi<span style="color:var(--secondary);">fy</span></p>
         <div class="footer-links">
             <a href="index.html">Home</a>
@@ -141,15 +156,22 @@
         </div>
         <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1); color:#ccc; font-size:0.9rem;">
             <div style="margin-bottom:0.4rem;"><i class="fas fa-envelope" style="width:20px;"></i> <a href="mailto:homify.online@gmail.com" style="color:#ccc;">homify.online@gmail.com</a></div>
-            <div style="margin-bottom:0.4rem;"><i class="fas fa-phone" style="width:20px;"></i> +263 71 080 2153</div>
-            <div><i class="fas fa-phone" style="width:20px;"></i> +27 61 815 5957</div>
+            <div style="margin-bottom:0.4rem;"><i class="fas fa-phone" style="width:20px;"></i> Zimbabwe: +263 71 080 2153</div>
+            <div><i class="fas fa-phone" style="width:20px;"></i> South Africa: +27 61 815 5957</div>
         </div>
-        <p style="color:#aaa; font-size:0.85rem; margin-top:1rem;">© 2025 Homify. Built for NUST.</p>
+        <div class="footer-legal">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms &amp; Conditions</a>
+            <a href="cookies.html">Cookie Policy</a>
+            <a href="refunds.html">Refund Policy</a>
+        </div>
+        <p style="color:#aaa; font-size:0.85rem; margin-top:1rem;">© <span class="js-year">2026</span> Homify. Operated in Bulawayo, Zimbabwe. All rights reserved.</p>
     </footer>
 
     <script src="js/auth.js?v=2"></script>
     <script src="js/app.js?v=2"></script>
     <script src="js/tilt.js?v=1"></script>
     <script src="js/listings.js?v=2"></script>
+    <script src="js/cookie-consent.js?v=1"></script>
 </body>
 </html>

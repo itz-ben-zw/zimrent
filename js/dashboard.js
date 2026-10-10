@@ -107,7 +107,7 @@ function renderListingsTable(listings) {
         <div class="btn-group">
           <button class="btn btn-sm btn-primary" onclick="editListing('${l.id}')">Edit</button>
           <button class="btn btn-sm btn-outline" onclick="viewListing('${l.id}')">View</button>
-          <button class="btn btn-sm" style="background:var(--danger); color:white;" onclick="confirmDelete('${l.id}')">×</button>
+          <button class="btn btn-sm" style="background:var(--danger); color:white;" onclick="confirmDelete('${l.id}')" aria-label="Delete listing">Delete</button>
         </div>
       </td>
     </tr>
@@ -396,7 +396,7 @@ function renderUploadPreview() {
   container.innerHTML = images.map((img, i) => `
     <div class="upload-thumb">
       <img src="${img.data}" alt="Preview ${i+1}">
-      <button type="button" class="remove-img" onclick="removeImage(${i})">×</button>
+      <button type="button" class="remove-img" onclick="removeImage(${i})" aria-label="Remove image ${i+1}">×</button>
     </div>
   `).join('');
 }

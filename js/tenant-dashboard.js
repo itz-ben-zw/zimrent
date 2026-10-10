@@ -47,7 +47,7 @@ function renderFavorites(favs) {
   if (favs.length === 0) return;
 
   container.innerHTML = favs.map(f => `
-    <div class="property-card" style="cursor:pointer;" onclick="sessionStorage.setItem('current_listing_id','${escapeHtml(f.id)}'); window.location.href='property.html';">
+    <div class="property-card" role="button" tabindex="0" style="cursor:pointer;" onclick="sessionStorage.setItem('current_listing_id','${escapeHtml(f.id)}'); window.location.href='property.html';" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sessionStorage.setItem('current_listing_id','${escapeHtml(f.id)}');window.location.href='property.html';}">
       <div class="property-image">
         ${f.images && f.images.length > 0
           ? `<img src="${f.images[0].data}" alt="${escapeHtml(f.title)}">`
@@ -139,7 +139,7 @@ function renderMessagePreview(convs) {
   if (convs.length === 0) return;
 
   container.innerHTML = convs.slice(0, 5).map(c => `
-    <div style="display:flex; align-items:center; gap:1rem; padding:0.8rem 1rem; border-bottom:1px solid var(--border); cursor:pointer; ${c.unreadCount > 0 ? 'background:#f0f7ff;' : ''}" onclick="sessionStorage.setItem('current_conversation_id','${c.id}'); window.location.href='chat.html';">
+    <div role="button" tabindex="0" style="display:flex; align-items:center; gap:1rem; padding:0.8rem 1rem; border-bottom:1px solid var(--border); cursor:pointer; ${c.unreadCount > 0 ? 'background:#f0f7ff;' : ''}" onclick="sessionStorage.setItem('current_conversation_id','${c.id}'); window.location.href='chat.html';" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sessionStorage.setItem('current_conversation_id','${c.id}');window.location.href='chat.html';}">
       <div style="width:40px; height:40px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; color:white; font-weight:700;">
         ${(c.landlordName || 'L')[0].toUpperCase()}
       </div>

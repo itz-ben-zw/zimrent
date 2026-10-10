@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /server/
+Disallow: /add-listing.html
+Disallow: /dashboard.html
+Disallow: /tenant-dashboard.html
+Disallow: /profile.html
+Disallow: /conversations.html
+Disallow: /chat.html
+
+Sitemap: https://homify.onrender.com/sitemap.xml

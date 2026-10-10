@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light">
-    <title>Profile — Homify</title>
+    <title>Profile - Homify</title>
+    <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
     <nav class="navbar">
         <a href="index.html" class="nav-brand">Homi<span>fy</span></a>
         <ul class="nav-links">
@@ -20,9 +22,9 @@
             <li><a href="#" id="nav-logout" style="display:none;" onclick="logout(); return false;">Logout</a></li>
             <li><span id="nav-user-info" style="display:none; font-weight:600; color:var(--primary);"></span></li>
         </ul>
-        <button class="menu-toggle">☰</button>
+        <button class="menu-toggle" aria-label="Open navigation menu" aria-expanded="false"☰</button>
     </nav>
-
+    <main id="main">
     <div class="container" style="max-width:600px; margin-top:2rem;">
         <div class="form-card">
             <h2>My Profile</h2>
@@ -34,7 +36,7 @@
             <div style="text-align:center; margin-bottom:2rem;">
                 <div id="profile-pic-container" style="width:120px; height:120px; border-radius:50%; overflow:hidden; margin:0 auto; background:#e0e0e0; display:flex; align-items:center; justify-content:center; border:3px solid var(--primary);">
                     <i class="fas fa-user-circle" style="font-size:5rem; color:#999;" id="profile-pic-placeholder"></i>
-                    <img id="profile-pic-img" style="width:100%; height:100%; object-fit:cover; display:none;">
+                    <img id="profile-pic-img" style="width:100%; height:100%; object-fit:cover; display:none;" alt="Your profile photo">
                 </div>
                 <div style="margin-top:0.8rem;">
                     <label for="profile-pic-upload" class="btn btn-sm btn-outline" style="cursor:pointer;">Change Photo</label>
@@ -67,10 +69,17 @@
             </form>
         </div>
     </div>
+    </main>
 
     <footer class="footer" style="margin-top:3rem;">
         <p style="font-weight:700; font-size:1.1rem;">Homi<span style="color:var(--secondary);">fy</span></p>
-        <p style="color:#aaa; font-size:0.85rem; margin-top:0.5rem;">© 2025 Homify. Built for NUST.</p>
+        <div class="footer-legal">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms &amp; Conditions</a>
+            <a href="cookies.html">Cookie Policy</a>
+            <a href="refunds.html">Refund Policy</a>
+        </div>
+        <p style="color:#aaa; font-size:0.85rem; margin-top:1rem;">© <span class="js-year">2026</span> Homify. Operated in Bulawayo, Zimbabwe. All rights reserved.</p>
     </footer>
 
     <script src="js/auth.js?v=2"></script>
@@ -171,5 +180,6 @@
         });
     });
     </script>
+    <script src="js/cookie-consent.js?v=1"></script>
 </body>
 </html>

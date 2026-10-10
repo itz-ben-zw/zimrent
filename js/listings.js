@@ -197,7 +197,7 @@ function renderListings(listings) {
   
   currentListings = listings;
   grid.innerHTML = listings.map(l => `
-    <div class="property-card" onclick="viewProperty('${l.id}')">
+    <div class="property-card" role="button" tabindex="0" onclick="viewProperty('${l.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();viewProperty('${l.id}');}">
       <div class="card-img">
         ${l.images && l.images.length > 0 
           ? `<img src="${l.images[0].data}" alt="${escapeHtml(l.title)}">` 
@@ -220,7 +220,7 @@ function renderListings(listings) {
           <span class="amenity-badge">Room for ${l.bedrooms}</span>
           <span class="amenity-badge">${l.type}</span>
       </div>
-        <button class="card-action">View Details</button>
+        <span class="card-action" aria-hidden="true">View Details</span>
       </div>
     </div>
   `).join('');
