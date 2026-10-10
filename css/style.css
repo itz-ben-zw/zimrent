@@ -104,7 +104,10 @@ button { cursor: pointer; font-family: inherit; }
 /* Hero */
 .hero {
     position: relative;
-    background: var(--brand-gradient);
+    /* Campus photo background. NOTE: campus.jpg is a web-sourced placeholder - replace with an owned/licensed photo before public launch. */
+    background: linear-gradient(rgba(9,58,105,0.80), rgba(9,58,105,0.74)), url('../assets/campus.jpg');
+    background-size: cover;
+    background-position: center;
     color: white;
     padding: 4rem 2rem;
     text-align: center;
