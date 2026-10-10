@@ -2,7 +2,6 @@ services:
   - type: web
     name: homify
     runtime: node
-    repo: https://github.com/itz-ben-zw/zimrent
     branch: main
     rootDir: server
     buildCommand: npm install
