@@ -209,7 +209,7 @@ async function sendSMS(to, otp) {
     const params = new URLSearchParams();
     params.append('To', to);
     params.append('From', from);
-    params.append('Body', `Your ZimRent verification code is ${otp}`);
+    params.append('Body', `Your Homify verification code is ${otp}`);
     const base64 = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
     const resp = await fetch(url, {
       method: 'POST',
@@ -226,7 +226,7 @@ async function sendSMS(to, otp) {
   if (provider === 'africastalking') {
     const username = process.env.AFRICASTALKING_USERNAME;
     const apiKey = process.env.AFRICASTALKING_API_KEY;
-    const senderId = process.env.AFRICASTALKING_SENDER_ID || 'ZimRent';
+    const senderId = process.env.AFRICASTALKING_SENDER_ID || 'Homify';
     if (!username || !apiKey) {
       throw new Error('Missing Africa\'s Talking env vars');
     }
@@ -234,7 +234,7 @@ async function sendSMS(to, otp) {
     const params = new URLSearchParams();
     params.append('username', username);
     params.append('to', to);
-    params.append('message', `Your ZimRent verification code is ${otp}`);
+    params.append('message', `Your Homify verification code is ${otp}`);
     params.append('senderId', senderId);
     const resp = await fetch(url, {
       method: 'POST',
@@ -288,7 +288,7 @@ router.post('/phone/verify', async (req, res) => {
   if (!user) {
     // Auto-register with phone
     const id = uuidv4();
-    const email = `user_${phone.replace(/[^0-9]/g, '')}@zimrent.phone`;
+    const email = `user_${phone.replace(/[^0-9]/g, '')}@homify.phone`;
     await db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, phone, username, profileImage, authProvider, phoneVerified) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       id, fullName || 'User', email, bcrypt.hashSync(uuidv4(), 10), role || 'tenant', phone, null, '', 'phone', 1

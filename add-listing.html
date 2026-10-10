@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light">
-    <title>Add New Listing — ZimRent</title>
+    <title>Add New Listing — Homify</title>
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
@@ -12,7 +12,7 @@
 <body>
     <!-- Navbar -->
     <nav class="navbar">
-        <a href="index.html" class="nav-brand">Zim<span>Rent</span></a>
+        <a href="index.html" class="nav-brand">Homi<span>fy</span></a>
         <ul class="nav-links">
             <li><a href="index.html">Home</a></li>
             <li><a href="listings.html">Browse</a></li>
@@ -30,8 +30,8 @@
 
     <div class="container">
         <div style="margin-bottom:2rem;">
-            <h1 style="font-size:1.8rem;">Add New Property</h1>
-            <p style="color:var(--text-muted);">Fill in the details below to list your rental property</p>
+            <h1 style="font-size:1.8rem;">List Student Accommodation</h1>
+            <p style="color:var(--text-muted);">Fill in the details below to list your property for NUST students</p>
         </div>
 
         <form id="add-listing-form" class="form-card">
@@ -40,31 +40,21 @@
             <!-- Basic Info -->
             <div class="form-group">
                 <label for="inp-title">Property Title *</label>
-                <input type="text" id="inp-title" placeholder="e.g. Modern 3-Bed House in Borrowdale" required>
+                <input type="text" id="inp-title" placeholder="e.g. Sunny Room near NUST in Selbourne Park" required>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
                     <label for="inp-city">City *</label>
                     <select id="inp-city" required>
-                        <option value="">Select City</option>
-                        <option value="Harare">Harare</option>
                         <option value="Bulawayo">Bulawayo</option>
-                        <option value="Mutare">Mutare</option>
-                        <option value="Gweru">Gweru</option>
-                        <option value="Kwekwe">Kwekwe</option>
-                        <option value="Masvingo">Masvingo</option>
-                        <option value="Chitungwiza">Chitungwiza</option>
-                        <option value="Marondera">Marondera</option>
-                        <option value="Bindura">Bindura</option>
-                        <option value="Other">Other</option>
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label for="inp-suburb">Suburb *</label>
                     <select id="inp-suburb" required>
-                        <option value="">Select City First</option>
+                        <option value="">Select Suburb</option>
                     </select>
                 </div>
             </div>
@@ -76,16 +66,15 @@
                         <option value="">Select Type</option>
                         <option value="House">House</option>
                         <option value="Apartment">Apartment</option>
-                        <option value="Townhouse">Townhouse</option>
                         <option value="Cottage">Cottage</option>
-                        <option value="Stand">Stand</option>
-                        <option value="Commercial">Commercial</option>
+                        <option value="Townhouse">Townhouse</option>
+                        <option value="Room">Room</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="inp-bedrooms">Bedrooms *</label>
-                    <input type="number" id="inp-bedrooms" min="1" max="20" placeholder="Number of bedrooms" required>
+                    <label for="inp-bedrooms">Room For *</label>
+                    <input type="number" id="inp-bedrooms" min="1" max="4" placeholder="Number of people it fits (1–4)" required>
                 </div>
             </div>
 
@@ -114,6 +103,22 @@
             <div style="margin:1.5rem 0; padding:1.2rem; background:#f0f7ff; border-radius:8px;">
                 <h3 style="margin-bottom:1rem; font-size:1.1rem;">Amenities</h3>
                 <div style="display:flex; gap:2rem; flex-wrap:wrap;">
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="inp-wifi">
+                        <label for="inp-wifi" style="margin:0; font-weight:400;"><i class="fas fa-wifi"></i> Wi-Fi</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="inp-electric-stove">
+                        <label for="inp-electric-stove" style="margin:0; font-weight:400;"><i class="fas fa-bolt"></i> Electric Stove</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="inp-gas-stove">
+                        <label for="inp-gas-stove" style="margin:0; font-weight:400;"><i class="fas fa-fire"></i> Gas Stove</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="inp-fridge">
+                        <label for="inp-fridge" style="margin:0; font-weight:400;"><i class="fas fa-igloo"></i> Refrigerator</label>
+                    </div>
                     <div class="filter-checkbox">
                         <input type="checkbox" id="inp-solar">
                         <label for="inp-solar" style="margin:0; font-weight:400;"><i class="fas fa-sun"></i> Solar Power</label>
@@ -179,7 +184,7 @@
 
     <!-- Footer -->
     <footer class="footer" style="margin-top:3rem;">
-        <p style="font-weight:700; font-size:1.1rem;">Zim<span style="color:var(--secondary);">Rent</span></p>
+        <p style="font-weight:700; font-size:1.1rem;">Homi<span style="color:var(--secondary);">fy</span></p>
         <div class="footer-links">
             <a href="index.html">Home</a>
             <a href="listings.html">Browse</a>
@@ -187,11 +192,11 @@
             <a href="add-listing.html">List Property</a>
         </div>
         <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1); color:#ccc; font-size:0.9rem;">
-            <div style="margin-bottom:0.4rem;"><i class="fas fa-envelope" style="width:20px;"></i> <a href="mailto:zimrent.online@gmail.com" style="color:#ccc;">zimrent.online@gmail.com</a></div>
+            <div style="margin-bottom:0.4rem;"><i class="fas fa-envelope" style="width:20px;"></i> <a href="mailto:homify.online@gmail.com" style="color:#ccc;">homify.online@gmail.com</a></div>
             <div style="margin-bottom:0.4rem;"><i class="fas fa-phone" style="width:20px;"></i> +263 71 080 2153</div>
             <div><i class="fas fa-phone" style="width:20px;"></i> +27 61 815 5957</div>
         </div>
-        <p style="color:#aaa; font-size:0.85rem; margin-top:1rem;">© 2025 ZimRent. Built for Zimbabwe.</p>
+        <p style="color:#aaa; font-size:0.85rem; margin-top:1rem;">© 2025 Homify. Built for NUST.</p>
     </footer>
 
     <script src="js/auth.js?v=3"></script>

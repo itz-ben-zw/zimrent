@@ -1,5 +1,5 @@
 /* ==========================================
-   ZIMRENT — Tenant Dashboard
+   HOMIFY — Tenant Dashboard
    ========================================== */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -59,7 +59,7 @@ function renderFavorites(favs) {
         <div class="property-location"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(f.city)}, ${escapeHtml(f.suburb)}</div>
         <div class="property-price">${f.currency} ${f.price?.toLocaleString() || '0'}/month</div>
         <div style="display:flex; gap:0.3rem; margin-top:0.3rem; flex-wrap:wrap;">
-          <span class="amenity-badge">${f.bedrooms} Bed${f.bedrooms !== 1 ? 's' : ''}</span>
+          <span class="amenity-badge">Room for ${f.bedrooms}</span>
           <span class="amenity-badge">${f.bathrooms} Bath${f.bathrooms !== 1 ? 's' : ''}</span>
           <span class="amenity-badge">${f.type}</span>
         </div>

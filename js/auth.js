@@ -1,5 +1,5 @@
 /* ==========================================
-   ZIMRENT — Authentication (Backend-connected)
+   HOMIFY — Authentication (Backend-connected)
    ========================================== */
 
 const API = '/api/auth';
@@ -11,7 +11,7 @@ function getAuthHeader() {
 
 function getSessionToken() {
   try {
-    const raw = sessionStorage.getItem('zimrent_session');
+    const raw = sessionStorage.getItem('homify_session');
     return raw ? JSON.parse(raw).token : null;
   } catch (e) {
     return null;
@@ -19,12 +19,12 @@ function getSessionToken() {
 }
 
 function saveSession({ token, user }) {
-  sessionStorage.setItem('zimrent_session', JSON.stringify({ token, user }));
+  sessionStorage.setItem('homify_session', JSON.stringify({ token, user }));
 }
 
 function getSession() {
   try {
-    const raw = sessionStorage.getItem('zimrent_session');
+    const raw = sessionStorage.getItem('homify_session');
     return raw ? JSON.parse(raw) : null;
   } catch (e) {
     return null;
@@ -43,7 +43,7 @@ function loginUser(data) {
 
 function logoutUser() {
   try {
-    sessionStorage.removeItem('zimrent_session');
+    sessionStorage.removeItem('homify_session');
   } catch (e) {}
 }
 

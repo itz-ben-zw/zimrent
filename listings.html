@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light">
-    <title>Browse Listings — ZimRent</title>
+    <title>Browse Listings — Homify</title>
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
@@ -12,7 +12,7 @@
 <body>
     <!-- Navbar -->
     <nav class="navbar">
-        <a href="index.html" class="nav-brand">Zim<span>Rent</span></a>
+        <a href="index.html" class="nav-brand">Homi<span>fy</span></a>
         <ul class="nav-links">
             <li><a href="index.html">Home</a></li>
             <li><a href="listings.html" class="active">Browse</a></li>
@@ -33,7 +33,7 @@
     <div class="container" style="padding-top:2rem; padding-bottom:0.5rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
             <div>
-                <h1 style="font-size:1.8rem;">Browse Rentals</h1>
+                <h1 style="font-size:1.8rem;">Browse Student Accommodation</h1>
                 <p style="color:var(--text-muted);"><span id="listings-count">0 listings found</span></p>
             </div>
             <a href="add-listing.html" class="btn btn-success">+ Add Listing</a>
@@ -48,13 +48,6 @@
                 <h3 style="margin-bottom:1rem; font-size:1.1rem;"><i class="fas fa-filter" style="color:var(--primary);"></i> Filters</h3>
                 
                 <div class="filter-group">
-                    <label>City</label>
-                    <select id="filter-city" aria-label="Filter by city">
-                        <option value="">All Cities</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
                     <label>Suburb</label>
                     <select id="filter-suburb" aria-label="Filter by suburb">
                         <option value="">All Suburbs</option>
@@ -62,15 +55,9 @@
                 </div>
                 
                 <div class="filter-group">
-                    <label>Bedrooms</label>
-                    <select id="filter-bedrooms" aria-label="Filter by minimum bedrooms">
+                    <label>Room For</label>
+                    <select id="filter-bedrooms" aria-label="Filter by room capacity">
                         <option value="">Any</option>
-                        <option value="1">1+</option>
-                        <option value="2">2+</option>
-                        <option value="3">3+</option>
-                        <option value="4">4+</option>
-                        <option value="5">5+</option>
-                        <option value="6">6+</option>
                     </select>
                 </div>
                 
@@ -102,15 +89,31 @@
                 <div class="filter-group">
                     <label>Amenities</label>
                     <div class="filter-checkbox">
-                        <input type="checkbox" id="filter-solar" value="yes">
+                        <input type="checkbox" id="filter-wifi">
+                        <label for="filter-wifi" style="margin:0; font-weight:400;"><i class="fas fa-wifi"></i> Wi-Fi</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="filter-electric-stove">
+                        <label for="filter-electric-stove" style="margin:0; font-weight:400;"><i class="fas fa-bolt"></i> Electric Stove</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="filter-gas-stove">
+                        <label for="filter-gas-stove" style="margin:0; font-weight:400;"><i class="fas fa-fire"></i> Gas Stove</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="filter-fridge">
+                        <label for="filter-fridge" style="margin:0; font-weight:400;"><i class="fas fa-igloo"></i> Refrigerator</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="filter-solar">
                         <label for="filter-solar" style="margin:0; font-weight:400;"><i class="fas fa-sun"></i> Solar Power</label>
                     </div>
                     <div class="filter-checkbox">
-                        <input type="checkbox" id="filter-borehole" value="yes">
+                        <input type="checkbox" id="filter-borehole">
                         <label for="filter-borehole" style="margin:0; font-weight:400;"><i class="fas fa-tint"></i> Borehole</label>
                     </div>
                     <div class="filter-checkbox">
-                        <input type="checkbox" id="filter-fenced" value="yes">
+                        <input type="checkbox" id="filter-fenced">
                         <label for="filter-fenced" style="margin:0; font-weight:400;"><i class="fas fa-lock"></i> Fenced</label>
                     </div>
                 </div>
@@ -129,7 +132,7 @@
 
     <!-- Footer -->
     <footer class="footer" style="margin-top:3rem;">
-        <p style="font-weight:700; font-size:1.1rem;">Zim<span style="color:var(--secondary);">Rent</span></p>
+        <p style="font-weight:700; font-size:1.1rem;">Homi<span style="color:var(--secondary);">fy</span></p>
         <div class="footer-links">
             <a href="index.html">Home</a>
             <a href="listings.html">Browse</a>
@@ -137,15 +140,16 @@
             <a href="add-listing.html">List Property</a>
         </div>
         <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1); color:#ccc; font-size:0.9rem;">
-            <div style="margin-bottom:0.4rem;"><i class="fas fa-envelope" style="width:20px;"></i> <a href="mailto:zimrent.online@gmail.com" style="color:#ccc;">zimrent.online@gmail.com</a></div>
+            <div style="margin-bottom:0.4rem;"><i class="fas fa-envelope" style="width:20px;"></i> <a href="mailto:homify.online@gmail.com" style="color:#ccc;">homify.online@gmail.com</a></div>
             <div style="margin-bottom:0.4rem;"><i class="fas fa-phone" style="width:20px;"></i> +263 71 080 2153</div>
             <div><i class="fas fa-phone" style="width:20px;"></i> +27 61 815 5957</div>
         </div>
-        <p style="color:#aaa; font-size:0.85rem; margin-top:1rem;">© 2025 ZimRent. Built for Zimbabwe.</p>
+        <p style="color:#aaa; font-size:0.85rem; margin-top:1rem;">© 2025 Homify. Built for NUST.</p>
     </footer>
 
     <script src="js/auth.js?v=2"></script>
     <script src="js/app.js?v=2"></script>
+    <script src="js/tilt.js?v=1"></script>
     <script src="js/listings.js?v=2"></script>
 </body>
 </html>

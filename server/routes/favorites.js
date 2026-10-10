@@ -19,6 +19,10 @@ router.get('/', authenticate, async (req, res) => {
   const parsed = favorites.map(f => ({
     ...f,
     images: JSON.parse(f.images || '[]'),
+    wifi: !!f.wifi,
+    electricStove: !!f.electricStove,
+    gasStove: !!f.gasStove,
+    fridge: !!f.fridge,
     solar: !!f.solar,
     borehole: !!f.borehole,
     fenced: !!f.fenced

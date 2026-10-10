@@ -51,6 +51,10 @@ router.get('/properties', async (req, res) => {
   const parsed = properties.map(p => ({
     ...p,
     images: JSON.parse(p.images || '[]'),
+    wifi: !!p.wifi,
+    electricStove: !!p.electricStove,
+    gasStove: !!p.gasStove,
+    fridge: !!p.fridge,
     solar: !!p.solar,
     borehole: !!p.borehole,
     fenced: !!p.fenced

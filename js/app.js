@@ -1,8 +1,8 @@
 /* ==========================================
-   ZIMRENT — Shared Utilities & Data Management
+   HOMIFY — Shared Utilities & Data Management
    ========================================== */
 
-const STORAGE_KEY = 'zimrent_listings';
+const STORAGE_KEY = 'homify_listings';
 
 // No sample data - start with empty listings
 const sampleListings = [];

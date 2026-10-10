@@ -92,6 +92,10 @@ router.get('/', optionalAuth, async (req, res) => {
   const parsed = properties.map(p => ({
     ...p,
     images: JSON.parse(p.images || '[]'),
+    wifi: !!p.wifi,
+    electricStove: !!p.electricStove,
+    gasStove: !!p.gasStove,
+    fridge: !!p.fridge,
     solar: !!p.solar,
     borehole: !!p.borehole,
     fenced: !!p.fenced
@@ -127,6 +131,10 @@ router.get('/:id', optionalAuth, async (req, res) => {
     property: {
       ...property,
       images: JSON.parse(property.images || '[]'),
+      wifi: !!property.wifi,
+      electricStove: !!property.electricStove,
+      gasStove: !!property.gasStove,
+      fridge: !!property.fridge,
       solar: !!property.solar,
       borehole: !!property.borehole,
       fenced: !!property.fenced,
@@ -138,7 +146,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
 
 // POST /api/properties - Create property (landlord/admin)
 router.post('/', authenticate, authorize('landlord', 'admin'), upload.array('images', 10), async (req, res) => {
-  const { title, description, city, suburb, type, bedrooms, bathrooms, price, currency, solar, borehole, fenced, customAdditions, phone, email, whatsapp } = req.body;
+  const { title, description, city, suburb, type, bedrooms, bathrooms, price, currency, wifi, electricStove, gasStove, fridge, solar, borehole, fenced, customAdditions, phone, email, whatsapp } = req.body;
 
   if (!title || !city || !suburb || !type || !price) {
     return res.status(400).json({ error: 'Title, city, suburb, type, and price are required' });
@@ -158,6 +166,10 @@ router.post('/', authenticate, authorize('landlord', 'admin'), upload.array('ima
     bathrooms: parseFloat(bathrooms) || 1,
     price: parseFloat(price) || 0,
     currency: currency || 'USD',
+    wifi: wifi === 'true' || wifi === true ? 1 : 0,
+    electricStove: electricStove === 'true' || electricStove === true ? 1 : 0,
+    gasStove: gasStove === 'true' || gasStove === true ? 1 : 0,
+    fridge: fridge === 'true' || fridge === true ? 1 : 0,
     solar: solar === 'true' || solar === true ? 1 : 0,
     borehole: borehole === 'true' || borehole === true ? 1 : 0,
     fenced: fenced === 'true' || fenced === true ? 1 : 0,
@@ -169,9 +181,11 @@ router.post('/', authenticate, authorize('landlord', 'admin'), upload.array('ima
   };
 
   const db = getDb();
-  await db.prepare(`INSERT INTO properties (id, landlordId, title, description, city, suburb, type, bedrooms, bathrooms, price, currency, solar, borehole, fenced, customAdditions, images, phone, email, whatsapp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+  await db.prepare(`INSERT INTO properties (id, landlordId, title, description, city, suburb, type, bedrooms, bathrooms, price, currency, wifi, electricStove, gasStove, fridge, solar, borehole, fenced, customAdditions, images, phone, email, whatsapp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
     property.id, property.landlordId, property.title, property.description, property.city, property.suburb, property.type,
-    property.bedrooms, property.bathrooms, property.price, property.currency, property.solar, property.borehole, property.fenced,
+    property.bedrooms, property.bathrooms, property.price, property.currency,
+    property.wifi, property.electricStove, property.gasStove, property.fridge,
+    property.solar, property.borehole, property.fenced,
     property.customAdditions, property.images, property.phone, property.email, property.whatsapp
   );
 
@@ -196,9 +210,9 @@ router.put('/:id', authenticate, async (req, res) => {
     return res.status(403).json({ error: 'You can only edit your own properties' });
   }
 
-  const { title, description, city, suburb, type, bedrooms, bathrooms, price, currency, solar, borehole, fenced, customAdditions, phone, email, whatsapp } = req.body;
+  const { title, description, city, suburb, type, bedrooms, bathrooms, price, currency, wifi, electricStove, gasStove, fridge, solar, borehole, fenced, customAdditions, phone, email, whatsapp } = req.body;
 
-  await db.prepare(`UPDATE properties SET title = ?, description = ?, city = ?, suburb = ?, type = ?, bedrooms = ?, bathrooms = ?, price = ?, currency = ?, solar = ?, borehole = ?, fenced = ?, customAdditions = ?, phone = ?, email = ?, whatsapp = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`).run(
+  await db.prepare(`UPDATE properties SET title = ?, description = ?, city = ?, suburb = ?, type = ?, bedrooms = ?, bathrooms = ?, price = ?, currency = ?, wifi = ?, electricStove = ?, gasStove = ?, fridge = ?, solar = ?, borehole = ?, fenced = ?, customAdditions = ?, phone = ?, email = ?, whatsapp = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`).run(
     title || existing.title,
     description !== undefined ? description : existing.description,
     city || existing.city,
@@ -208,6 +222,10 @@ router.put('/:id', authenticate, async (req, res) => {
     bathrooms ? parseFloat(bathrooms) : existing.bathrooms,
     price ? parseFloat(price) : existing.price,
     currency || existing.currency,
+    wifi !== undefined ? (wifi === 'true' || wifi === true ? 1 : 0) : existing.wifi,
+    electricStove !== undefined ? (electricStove === 'true' || electricStove === true ? 1 : 0) : existing.electricStove,
+    gasStove !== undefined ? (gasStove === 'true' || gasStove === true ? 1 : 0) : existing.gasStove,
+    fridge !== undefined ? (fridge === 'true' || fridge === true ? 1 : 0) : existing.fridge,
     solar !== undefined ? (solar === 'true' || solar === true ? 1 : 0) : existing.solar,
     borehole !== undefined ? (borehole === 'true' || borehole === true ? 1 : 0) : existing.borehole,
     fenced !== undefined ? (fenced === 'true' || fenced === true ? 1 : 0) : existing.fenced,
@@ -223,6 +241,10 @@ router.put('/:id', authenticate, async (req, res) => {
     property: {
       ...updated,
       images: JSON.parse(updated.images || '[]'),
+      wifi: !!updated.wifi,
+      electricStove: !!updated.electricStove,
+      gasStove: !!updated.gasStove,
+      fridge: !!updated.fridge,
       solar: !!updated.solar,
       borehole: !!updated.borehole,
       fenced: !!updated.fenced

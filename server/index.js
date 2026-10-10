@@ -95,7 +95,7 @@ async function initializeApp() {
       'Luxury Apartment with City View',
       'Family Townhouse in Burnside'
     ];
-    const demoLandlordEmail = 'landlord@zimrent.com';
+    const demoLandlordEmail = 'landlord@homify.com';
     const placeholders = demoTitles.map(() => '?').join(',');
     const removed = await db.prepare(
       `DELETE FROM properties WHERE title IN (${placeholders}) AND email = ?`
@@ -124,7 +124,7 @@ async function initializeApp() {
 // Start server
 initializeApp().then(() => {
   app.listen(PORT, () => {
-    console.log(`\n  ZimRent Backend Server`);
+    console.log(`\n  Homify Backend Server`);
     console.log(`  ─────────────────────`);
     console.log(`  Server:    http://localhost:${PORT}`);
     console.log(`  API:       http://localhost:${PORT}/api`);

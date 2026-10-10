@@ -1,5 +1,5 @@
 /* ==========================================
-   ZIMRENT — Property Detail Page
+   HOMIFY — Property Detail Page
    ========================================== */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Meta: beds/baths/type
     const meta = document.getElementById('detail-meta');
     meta.innerHTML = [
-      '<span class="amenity-badge">' + p.bedrooms + ' Bed' + (p.bedrooms !== 1 ? 's' : '') + '</span>',
+      '<span class="amenity-badge">Room for ' + p.bedrooms + '</span>',
       '<span class="amenity-badge">' + p.bathrooms + ' Bath' + (p.bathrooms !== 1 ? 's' : '') + '</span>',
       '<span class="amenity-badge">' + p.type + '</span>'
     ].join('');
@@ -36,6 +36,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Amenities
     const amenities = document.getElementById('detail-amenities');
     const amenityItems = [];
+    if (p.wifi) amenityItems.push('<span class="amenity-badge yes"><i class="fas fa-wifi"></i> Wi-Fi</span>');
+    if (p.electricStove) amenityItems.push('<span class="amenity-badge yes"><i class="fas fa-bolt"></i> Electric Stove</span>');
+    if (p.gasStove) amenityItems.push('<span class="amenity-badge yes"><i class="fas fa-fire"></i> Gas Stove</span>');
+    if (p.fridge) amenityItems.push('<span class="amenity-badge yes"><i class="fas fa-igloo"></i> Refrigerator</span>');
     if (p.solar) amenityItems.push('<span class="amenity-badge yes"><i class="fas fa-sun"></i> Solar Power</span>');
     if (p.borehole) amenityItems.push('<span class="amenity-badge yes"><i class="fas fa-tint"></i> Borehole Water</span>');
     if (p.fenced) amenityItems.push('<span class="amenity-badge yes"><i class="fas fa-lock"></i> Fenced</span>');

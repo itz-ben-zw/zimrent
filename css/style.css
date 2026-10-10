@@ -1,5 +1,5 @@
 /* ==========================================
-   ZIMRENT — Professional Rental Marketplace
+   HOMIFY — Professional Rental Marketplace
    Clean, Modern Design (Property24/Airbnb inspired)
    ========================================== */
 
@@ -9,19 +9,23 @@
        auto-apply dark UA styles to inputs/selects/scrollbars, which clashes
        with our explicit light colors and breaks form control rendering. */
     color-scheme: light;
-    --primary: #0f4c81;
-    --primary-dark: #0a365c;
-    --secondary: #f39c12;
+    /* Homify brand palette — derived from the logo:
+       bright azure gradient + white */
+    --primary: #0d7fd6;
+    --primary-dark: #0a5fa8;
+    --primary-light: #29a8f5;
+    --secondary: #0e90e6;
+    --brand-gradient: linear-gradient(135deg, #29a8f5 0%, #0d7fd6 55%, #0a5fa8 100%);
     --accent: #27ae60;
     --danger: #c0392b;
-    --bg-light: #f8f9fa;
+    --bg-light: #f4f8fc;
     --text-dark: #2c3e50;
     --text-muted: #7f8c8d;
-    --border: #e0e0e0;
-    --shadow: 0 2px 8px rgba(0,0,0,0.08);
-    --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
-    --radius: 12px;
-    --radius-sm: 8px;
+    --border: #dfe8f2;
+    --shadow: 0 2px 10px rgba(13,127,214,0.10);
+    --shadow-lg: 0 10px 30px rgba(13,127,214,0.16);
+    --radius: 16px;
+    --radius-sm: 10px;
 }
 
 /* Reset & Base */
@@ -81,12 +85,13 @@ button { cursor: pointer; font-family: inherit; }
 }
 
 .nav-cta {
-    background: var(--primary);
+    background: var(--brand-gradient);
     color: white !important;
     padding: 0.5rem 1.2rem !important;
+    box-shadow: 0 2px 8px rgba(13,127,214,0.35);
 }
 
-.nav-cta:hover { background: var(--primary-dark); }
+.nav-cta:hover { filter: brightness(0.92); }
 
 /* Mobile menu */
 .menu-toggle { display: none; background: none; border: none; font-size: 1.5rem; color: var(--text-dark); }
@@ -96,11 +101,96 @@ button { cursor: pointer; font-family: inherit; }
 
 /* Hero */
 .hero {
-    background: linear-gradient(135deg, var(--primary) 0%, #1a5fa0 100%);
+    position: relative;
+    background: var(--brand-gradient);
     color: white;
     padding: 4rem 2rem;
     text-align: center;
+    overflow: hidden;
 }
+
+/* Soft floating glows — echoes the logo's glossy, rounded feel */
+.hero::before,
+.hero::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+.hero::before {
+    width: 420px;
+    height: 420px;
+    background: #7fd0ff;
+    top: -160px;
+    right: -120px;
+    animation: heroOrbA 16s ease-in-out infinite;
+}
+
+.hero::after {
+    width: 340px;
+    height: 340px;
+    background: #0a3f75;
+    bottom: -140px;
+    left: -100px;
+    animation: heroOrbB 20s ease-in-out infinite;
+}
+
+@keyframes heroOrbA {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-24px, 30px); }
+}
+
+@keyframes heroOrbB {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(30px, -20px); }
+}
+
+#hero-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* 3D card tilt gloss */
+.property-card {
+    position: relative;
+}
+
+.property-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%),
+        rgba(255, 255, 255, 0.35), transparent 65%);
+    opacity: 0;
+    transition: opacity 0.25s;
+    pointer-events: none;
+}
+
+.property-card.tilting::after { opacity: 1; }
+
+.stat-card, .dash-card, .property-card {
+    transition: transform 0.15s ease-out, box-shadow 0.2s ease;
+    will-change: transform;
+}
+
+.tilting {
+    box-shadow: 0 18px 40px rgba(13, 127, 214, 0.28) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero::before, .hero::after { animation: none; }
+    .stat-card, .dash-card, .property-card { transition: none; will-change: auto; }
+}
+
+.hero > * { position: relative; z-index: 1; }
 
 .hero h1 {
     font-size: 2.8rem;
@@ -138,17 +228,18 @@ button { cursor: pointer; font-family: inherit; }
 }
 
 .search-btn {
-    background: var(--secondary);
+    background: var(--brand-gradient);
     color: white;
     border: none;
     padding: 0.7rem 1.5rem;
     border-radius: var(--radius-sm);
     font-weight: 700;
     font-size: 0.95rem;
-    transition: background 0.2s;
+    transition: filter 0.2s, transform 0.2s;
+    box-shadow: 0 4px 14px rgba(13,127,214,0.30);
 }
 
-.search-btn:hover { background: #d68910; }
+.search-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
 
 /* Stats */
 .stats {
@@ -351,11 +442,15 @@ button { cursor: pointer; font-family: inherit; }
     transition: all 0.2s;
 }
 
-.btn-primary { background: var(--primary); color: white; }
-.btn-primary:hover { background: var(--primary-dark); }
+.btn-primary {
+    background: var(--brand-gradient);
+    color: white;
+    box-shadow: 0 4px 14px rgba(13,127,214,0.25);
+}
+.btn-primary:hover { filter: brightness(0.92); transform: translateY(-1px); }
 
 .btn-secondary { background: var(--secondary); color: white; }
-.btn-secondary:hover { background: #d68910; }
+.btn-secondary:hover { background: #0b76c0; }
 
 .btn-success { background: var(--accent); color: white; }
 .btn-success:hover { background: #1e8449; }
@@ -579,7 +674,7 @@ button { cursor: pointer; font-family: inherit; }
 
 /* Footer */
 .footer {
-    background: var(--text-dark);
+    background: linear-gradient(135deg, #0a4d8f 0%, #062f54 100%);
     color: white;
     padding: 2rem;
     margin-top: 3rem;

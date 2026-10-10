@@ -1,5 +1,5 @@
 /* ==========================================
-   ZIMRENT — Landlord Dashboard & Add Listing
+   HOMIFY — Landlord Dashboard & Add Listing
    ========================================== */
 
 let editingId = null;
@@ -94,6 +94,10 @@ function renderListingsTable(listings) {
         <span style="font-weight:600;">${l.currency} ${l.price.toLocaleString()}</span>
       </td>
       <td>
+        ${l.wifi ? '<span style="color:var(--accent);"><i class="fas fa-wifi"></i></span>' : ''}
+        ${l.electricStove ? '<span style="color:var(--accent);"><i class="fas fa-bolt"></i></span>' : ''}
+        ${l.gasStove ? '<span style="color:var(--accent);"><i class="fas fa-fire"></i></span>' : ''}
+        ${l.fridge ? '<span style="color:var(--accent);"><i class="fas fa-igloo"></i></span>' : ''}
         ${l.solar ? '<span style="color:var(--accent);"><i class="fas fa-sun"></i></span>' : ''}
         ${l.borehole ? '<span style="color:var(--accent);"><i class="fas fa-tint"></i></span>' : ''}
         ${l.fenced ? '<span style="color:var(--accent);"><i class="fas fa-lock"></i></span>' : ''}
@@ -131,6 +135,10 @@ async function handleListingSubmit(e) {
     bathrooms: parseFloat(document.getElementById('inp-bathrooms').value) || 1,
     price: parseFloat(document.getElementById('inp-price').value),
     currency: document.getElementById('inp-currency').value,
+    wifi: document.getElementById('inp-wifi').checked,
+    electricStove: document.getElementById('inp-electric-stove').checked,
+    gasStove: document.getElementById('inp-gas-stove').checked,
+    fridge: document.getElementById('inp-fridge').checked,
     solar: document.getElementById('inp-solar').checked,
     borehole: document.getElementById('inp-borehole').checked,
     fenced: document.getElementById('inp-fenced').checked,
@@ -242,7 +250,7 @@ function populateAddFormHelpers() {
       });
     });
     
-    if (citySelect.value && suburbSelect && !suburbSelect.options.length) {
+    if (citySelect.value && suburbSelect) {
       const subList = ZIM_LOCATIONS[citySelect.value] || [];
       suburbSelect.innerHTML = '<option value="">Select Suburb</option>';
       subList.forEach(s => {
@@ -328,6 +336,10 @@ function prefillForm(listing) {
   document.getElementById('inp-bathrooms').value = listing.bathrooms;
   document.getElementById('inp-price').value = listing.price;
   document.getElementById('inp-currency').value = listing.currency;
+  document.getElementById('inp-wifi').checked = !!listing.wifi;
+  document.getElementById('inp-electric-stove').checked = !!listing.electricStove;
+  document.getElementById('inp-gas-stove').checked = !!listing.gasStove;
+  document.getElementById('inp-fridge').checked = !!listing.fridge;
   document.getElementById('inp-solar').checked = listing.solar;
   document.getElementById('inp-borehole').checked = listing.borehole;
   document.getElementById('inp-fenced').checked = listing.fenced;

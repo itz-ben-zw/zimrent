@@ -1,30 +1,8 @@
 /* ==========================================
-   ZIMRENT — Listings Page: Browse & Filter
+   HOMIFY — Listings Page: Browse & Filter
    ========================================== */
 
 const ZIM_LOCATIONS = {
-  'Harare': [
-    'Alexandra Park', 'Amalinda', 'Amby', 'Arcadia', 'Arlington', 'Ashbrittle', 'Athlone', 'Avondale', 'Avondale West', 'Avonlea',
-    'Ballantyne Park', 'Belgravia', 'Belvedere', 'Beverley', 'Beverley West', 'Bloomingdale', 'Borrowdale', 'Borrowdale Brooke', 'Borrowdale West', 'Braeside',
-    'Budiriro', 'Caledonia', 'Chadcombe', 'Chikurubi', 'Chisipite', 'Chizhanje', 'Colne Valley', 'Colray', 'Coronation Park', 'Crowborough',
-    'Dawn Hill', 'Donnybrook', 'Dzivarasekwa',
-    'Eastlea', 'Eastview', 'Emerald Hill',
-    'Glen Lorne', 'Glen Norah A', 'Glen Norah B', 'Glen Norah C', 'Glen View 1', 'Glen View 2', 'Glen View 3', 'Glen View 4', 'Glen View 5', 'Glen View 7', 'Glen View 8', 'Glenwood', 'Greencroft', 'Greendale', 'Greendale North', 'Green Grove', 'Greystone Park', 'Groombridge',
-    'Hatcliffe', 'Hatcliffe Extension', 'Helensvale', 'Highlands', 'Hillside', 'Hogerty Hill', 'Hopley', 'Houghton Park',
-    'Induna Park',
-    'Kambanji', 'Kambuzuma', 'Kensington', 'Kuwadzana', 'Kuwadzana Extension',
-    'Letombo Park', 'Lewisam', 'Lochinvar', 'Logan Park', 'Lorraine',
-    'Mabvuku', 'Mainway Meadows', 'Malbereign', 'Malvern', 'Mandara', 'Manresa', 'Marlborough', 'Marlborough East', 'Mbare', 'Meyrick Park', 'Milton Park', 'Monavale', 'Montrose', 'Mount Hampden', 'Mount Pleasant', 'Mount Pleasant Heights', 'Msasa', 'Msasa Park',
-    'Newlands', 'New Marlborough', 'New Alexandra Park', 'New Bluff Hill', 'Northwood',
-    'Park Meadows', 'Parktown', 'Philadelphia', 'Pomona', 'Prospect',
-    'Quinnington',
-    'Rhodesville', 'Rietfontein', 'Rockview', 'Rolf Valley', 'Rugare', 'Runiville',
-    'Sandton Park', 'Southerton', 'Shortstone', 'Strathaven', 'Sunningdale',
-    'Tafara', 'Tynwald', 'Tynwald North', 'Tynwald South',
-    'Umwinsdale', 'Uplands',
-    'Vainona',
-    'Warren Park', 'Warren Park D', 'Waterfalls', 'Westgate', 'Westlea', 'Willowvale', 'Workington'
-  ],
   'Bulawayo': [
     'Barbourfields', 'Bellevue', 'Belmont', 'Belmont East', 'Bon Accord', 'Boroughs', 'Bradfield', 'Burnside', 'Buena Vista', 'Caledonia',
     'Cement', 'Cowdray Park', 'Donnington', 'Douglasdale', 'Dromore',
@@ -43,220 +21,10 @@ const ZIM_LOCATIONS = {
     'Upper Rangemore',
     'Vainona',
     'Warren Park', 'Waterfalls', 'Waterford', 'Waterlea', 'West Somerton', 'Westgate', 'Westlea', 'Westondale', 'Westondale Industrial', 'Whitestone', 'Willsgrove', 'Willsgrove Park', 'Windsor Park', 'Woodlands', 'Woodville', 'Woodville Park', 'Workington'
-  ],
-  'Mutare': [
-    'Alexander Park', 'Avenues',
-    'Boulders',
-    'Chikanga', 'Chikanga Phase 1', 'Chikanga Phase 2', 'Chikanga Phase 3', 'Darlington', 'Dangamvura',
-    'Fairbridge Park', 'Fern Valley',
-    'Gimboki', 'Greenside',
-    'Hillcrest', 'Hobhouse', 'Hospital Hill',
-    'Morningside', 'Murambi', 'Murambi Heights',
-    'Natview',
-    'Palmerston', 'Palmerston North', 'Penhalonga Road',
-    'Riverside',
-    'Sakubva', 'Springvale',
-    "Tiger's Kloof",
-    'Utopia',
-    'Vumba Road',
-    'Weirmouth',
-    'Yeovil'
-  ],
-  'Gweru': [
-    'Ascot', 'Ascot Extension', 'Athlone',
-    'Belmont Industrial', 'CBC', 'Chicago', 'Clonsilla', 'Daylesford',
-    'Eastview', 'Fairmile', 'Fairview', 'Garden Park', 'Grange',
-    'Heavy Industrial Area', 'Hertfordshire', 'Hertslet', 'Ivene',
-    'Kopje',
-    'Light Industrial Area', 'Lundi Park',
-    'Mambo', 'Midlands Industrial Park', 'Mkoba 1', 'Mkoba 2', 'Mkoba 3', 'Mkoba 4', 'Mkoba 5', 'Mkoba 6', 'Mkoba 7', 'Mkoba 8', 'Mkoba 9', 'Mkoba 10', 'Monomotapa', 'Mtapa',
-    'New Christmas Gift',
-    'Northgate Heights',
-    'Ridgemont', 'Riverside',
-    'Senga', 'Shamrock Park', 'Southdowns', 'Southdowns Industrial', 'Southview', 'Sunnyside',
-    'Thornhill',
-    'Westgate', 'Windsor Park', 'Woodlands'
-  ],
-  'Kwekwe': [
-    'Amaveni', 'Amaveni East',
-    'Broadlands',
-    'CBD Residential', 'Chicago', 'Chicago Extension', 'Clonsilla',
-    'Fitchlea',
-    'Gaika', 'Globe and Phoenix Industrial Area', 'Golden Acres',
-    'Hazeldene', 'Hillandale',
-    'Kwekwe East', 'Kwekwe Industrial Area',
-    'Mbizo 1', 'Mbizo 2', 'Mbizo 3', 'Mbizo 4', 'Mbizo 5', 'Mbizo 6', 'Mbizo 7', 'Mbizo 8', 'Mbizo 9', 'Mbizo 10', 'McMahon',
-    'Newtown', 'Northlea',
-    'Palm Grove',
-    'Queens Park',
-    'Redcliff', 'Redcliff Industrial Area', 'Riverside', 'Rutendo',
-    'Southview', 'Steelworks Industrial Area',
-    'Torwood',
-    'ZISCO Industrial Area', 'Zhombe View'
-  ],
-  'Masvingo': [
-    'Beitdale', 'Bushmead',
-    'Chevron', 'Clipsham', 'Clipsham Views',
-    'Eastvale', 'Eastvale Extension',
-    'Garikai', 'Golf Course',
-    'Heavy Industrial Area', 'Hillside',
-    'Kelvin North Industrial Area',
-    'Light Industrial Area',
-    'Masvingo Industrial Area', 'Morning Side', 'Mucheke A', 'Mucheke B', 'Mucheke D', 'Morningside',
-    'Ndarama',
-    'Presidents Park',
-    'Rhodene', 'Rhodene East', 'Rhodene North', 'Rhodene West', 'Rhodene Extension', 'Rujeko', 'Runyararo', 'Runyararo West',
-    'Target Kop',
-    'Victoria Ranch',
-    'Zimre Park'
-  ],
-  'Chitungwiza': [
-    'Chitungwiza Industrial Area',
-    'Makoni Shopping Centre',
-    'Manyame Park',
-    'Seke Road',
-    'Seke Unit A', 'Seke Unit B', 'Seke Unit C', 'Seke Unit D', 'Seke Unit E', 'Seke Unit F', 'Seke Unit G', 'Seke Unit H', 'Seke Unit J', 'Seke Unit K',
-    'St Mary\'s',
-    'Town Centre',
-    'Unit L', 'Unit O',
-    'Zengeza', 'Zengeza 1', 'Zengeza 2', 'Zengeza 3', 'Zengeza 4', 'Zengeza 5', 'Zengeza 6', 'Zengeza 7', 'Zengeza 8', 'Zengeza 9', 'Zengeza 10'
-  ],
-  'Marondera': [
-    'Cherima', 'Cherutombo',
-    'Dombotombo',
-    'Harare-Mutare Road',
-    'Kingsmead',
-    'Mabvazuva',
-    'Mahusekwa Road',
-    'Nyameni',
-    'Ratidzo',
-    'Rujeko', 'Rusike', 'Ruzawi Park',
-    'Waddilove'
-  ],
-  'Bindura': [
-    'Bindura Industrial Area',
-    'Chipadze',
-    'Chiwaridzo',
-    'Dombotombo',
-    'Garikai',
-    'Greenhill',
-    'Mazowe Road',
-    'Rushinga Road',
-    'Trojan Mine',
-    'University of Bindura'
-  ],
-  'Chegutu': [
-    'Chegutu', 'Chegutu Industrial Area',
-    'Chinengundu',
-    'Hartley Avenue', 'Hartley Hills',
-    'Hintonville',
-    'Kaguvi',
-    'Outskirts',
-    'Pfupajena',
-    'Railway Line',
-    'Rifle Range',
-    'Umvovo'
-  ],
-  'Kadoma': [
-    'Chegutu Road', 'Davies Park',
-    'Eastview', 'Eiffel Flats',
-    'Gadzema',
-    'Ingezi',
-    'Kadoma Heights', 'Kadoma Industrial Area',
-    'Overspill',
-    'Rimuka',
-    'Sanyati Road',
-    'Waverly',
-    'Westview'
-  ],
-  'Gwanda': [
-    'CBD',
-    'Filabusi Road', 'Filabusi Road estates',
-    'Gwanda CBD', 'Gwanda Industrial Area',
-    'Jahunda',
-    'Makwe', 'Mining Service Zones',
-    'Nkululeko',
-    'Old Gwanda',
-    'Phakama',
-    'Railway Line', 'River Ranch',
-    'Spitzkop',
-    'West Nicholson Road'
-  ],
-  'Norton': [
-    'Chikonohono',
-    'Farm Residential',
-    'Harare-Bulawayo Highway',
-    'Katanga',
-    'Knowe',
-    'Londonderry',
-    'Ngoni',
-    'Norton Farm Estates', 'Norton Golf Course', 'Norton Industrial Area', 'Norton Town',
-    'Railway Line',
-    'Seki',
-    'Trelawney Park', 'Trelawney Road'
-  ],
-  'Mazowe': [
-    'Chiweshe',
-    'Christon Bank',
-    'Glendale',
-    'Mazowe Bridge', 'Mazowe Citrus Estates', 'Mazowe Estates', 'Mazowe River', 'Mazowe Town', 'Mazowe Valley',
-    'Mining Service Areas',
-    'Mvurwi Road',
-    'Rafingora'
-  ],
-  'Ruwa': [
-    'Arcturus Road',
-    'Damofalls',
-    'Mabvazuva',
-    'Ruwa Golf Course', 'Ruwa Industrial Area',
-    'Springvale', 'Springfield Park',
-    'Sunway City',
-    'Timire Park',
-    'Windsor Park'
-  ],
-  'Beitbridge': [
-    'Basani',
-    'Beitbridge Border Post',
-    'Beitbridge CBD',
-    'Beitbridge Industrial Area',
-    'Beitbridge Town',
-    'Border Post',
-    'Dite',
-    'Dulivhadzimu',
-    'Freight Depots',
-    'Highway Logistics Corridor',
-    'Limpopo River',
-    'Mahomva',
-    'Mtetengwe',
-    'River Ranch'
-  ],
-  'Victoria Falls': [
-    'Aerodrome',
-    'Baobab',
-    'Chinotimba',
-    'Golf Estate',
-    'Kazungula Road',
-    'Livingstone Way',
-    'Mkhosana', 'Mkhosana Old',
-    'Ndlovu Extension',
-    'Riverside',
-    'Victoria Falls CBD',
-    'Victoria Falls Private Estates',
-    'Wood Road',
-    'Zambezi National Park area'
-  ],
-  'Rusape': [
-    'Dangamvura Extension',
-    'Nyanga Road', 'Nyazura Road',
-    'Outskirts',
-    'Rusape CBD', 'Rusape Industrial Area',
-    'Tsanzaguru',
-    'Vengere'
-  ],
-  'Other': ['Rural', 'Out of Town']
+  ]
 };
 
-const PROPERTY_TYPES = ['House', 'Apartment', 'Townhouse', 'Cottage', 'Stand', 'Commercial'];
+const PROPERTY_TYPES = ['House', 'Apartment', 'Cottage', 'Townhouse', 'Room'];
 
 async function fetchListingsFromAPI() {
   const headers = { 'Content-Type': 'application/json' };
@@ -271,7 +39,7 @@ async function fetchListingsFromAPI() {
 
 function initListingsPage() {
   fetchListingsFromAPI().then(listings => {
-    populateCities();
+    populateSuburbs();
     populateBedrooms();
     populatePropertyTypes();
     populateCurrencies();
@@ -280,11 +48,14 @@ function initListingsPage() {
     console.error('Failed to load listings:', err);
   });
   
-  document.getElementById('filter-city').addEventListener('change', applyFilters);
   document.getElementById('filter-suburb').addEventListener('change', applyFilters);
   document.getElementById('filter-bedrooms').addEventListener('change', applyFilters);
   document.getElementById('filter-type').addEventListener('change', applyFilters);
   document.getElementById('filter-currency').addEventListener('change', applyFilters);
+  document.getElementById('filter-wifi').addEventListener('change', applyFilters);
+  document.getElementById('filter-electric-stove').addEventListener('change', applyFilters);
+  document.getElementById('filter-gas-stove').addEventListener('change', applyFilters);
+  document.getElementById('filter-fridge').addEventListener('change', applyFilters);
   document.getElementById('filter-solar').addEventListener('change', applyFilters);
   document.getElementById('filter-borehole').addEventListener('change', applyFilters);
   document.getElementById('filter-fenced').addEventListener('change', applyFilters);
@@ -293,50 +64,41 @@ function initListingsPage() {
   
   document.getElementById('reset-filters').addEventListener('click', resetFilters);
   
-  const searchQuery = sessionStorage.getItem('zimrent_search');
+  const searchQuery = sessionStorage.getItem('homify_search');
   if (searchQuery) {
-    sessionStorage.removeItem('zimrent_search');
+    sessionStorage.removeItem('homify_search');
     const query = JSON.parse(searchQuery);
-    document.getElementById('filter-city').value = query.city || '';
+    if (query.suburb) {
+      // Match the typed suburb against known options (case-insensitive)
+      const suburbSelect = document.getElementById('filter-suburb');
+      const match = Array.from(suburbSelect.options).find(o => o.value && o.value.toLowerCase() === query.suburb.toLowerCase());
+      if (match) suburbSelect.value = match.value;
+    }
     document.getElementById('filter-bedrooms').value = query.bedrooms || '';
     applyFilters();
   }
 }
 
-function populateCities() {
-  const select = document.getElementById('filter-city');
+function populateSuburbs() {
+  const select = document.getElementById('filter-suburb');
   if (!select) return;
-  const cities = ['All Cities', ...Object.keys(ZIM_LOCATIONS).sort()];
-  cities.forEach(city => {
+  select.innerHTML = '<option value="">All Suburbs</option>';
+  const suburbs = Object.values(ZIM_LOCATIONS).flat().sort();
+  suburbs.forEach(sub => {
     const opt = document.createElement('option');
-    opt.value = city === 'All Cities' ? '' : city;
-    opt.textContent = city;
+    opt.value = sub;
+    opt.textContent = sub;
     select.appendChild(opt);
-  });
-  
-  select.addEventListener('change', () => {
-    const city = select.value;
-    const suburbSelect = document.getElementById('filter-suburb');
-    suburbSelect.innerHTML = '<option value="">All Suburbs</option>';
-    if (city && ZIM_LOCATIONS[city]) {
-      const suburbs = ZIM_LOCATIONS[city].sort();
-      suburbs.forEach(sub => {
-        const opt = document.createElement('option');
-        opt.value = sub;
-        opt.textContent = sub;
-        suburbSelect.appendChild(opt);
-      });
-    }
   });
 }
 
 function populateBedrooms() {
   const select = document.getElementById('filter-bedrooms');
   if (!select) return;
-  for (let i = 1; i <= 6; i++) {
+  for (let i = 1; i <= 4; i++) {
     const opt = document.createElement('option');
     opt.value = i;
-    opt.textContent = `${i}+ Bedrooms`;
+    opt.textContent = `Room for ${i}`;
     select.appendChild(opt);
   }
 }
@@ -368,29 +130,32 @@ function populateCurrencies() {
 let currentListings = [];
 
 function applyFilters() {
-  const city = document.getElementById('filter-city').value;
   const suburb = document.getElementById('filter-suburb').value;
   const bedrooms = document.getElementById('filter-bedrooms').value;
   const type = document.getElementById('filter-type').value;
   const currency = document.getElementById('filter-currency').value;
-  const solar = document.getElementById('filter-solar').value;
-  const borehole = document.getElementById('filter-borehole').value;
-  const fenced = document.getElementById('filter-fenced').value;
+  const wifi = document.getElementById('filter-wifi').checked;
+  const electricStove = document.getElementById('filter-electric-stove').checked;
+  const gasStove = document.getElementById('filter-gas-stove').checked;
+  const fridge = document.getElementById('filter-fridge').checked;
+  const solar = document.getElementById('filter-solar').checked;
+  const borehole = document.getElementById('filter-borehole').checked;
+  const fenced = document.getElementById('filter-fenced').checked;
   const minPrice = parseFloat(document.getElementById('filter-min-price').value) || 0;
   const maxPrice = parseFloat(document.getElementById('filter-max-price').value) || Infinity;
   
   const filtered = currentListings.filter(l => {
-    if (city && l.city !== city) return false;
     if (suburb && l.suburb !== suburb) return false;
     if (bedrooms && l.bedrooms < parseInt(bedrooms)) return false;
     if (type && l.type !== type) return false;
     if (currency && l.currency !== currency) return false;
-    if (solar === 'yes' && !l.solar) return false;
-    if (solar === 'no' && l.solar) return false;
-    if (borehole === 'yes' && !l.borehole) return false;
-    if (borehole === 'no' && l.borehole) return false;
-    if (fenced === 'yes' && !l.fenced) return false;
-    if (fenced === 'no' && l.fenced) return false;
+    if (wifi && !l.wifi) return false;
+    if (electricStove && !l.electricStove) return false;
+    if (gasStove && !l.gasStove) return false;
+    if (fridge && !l.fridge) return false;
+    if (solar && !l.solar) return false;
+    if (borehole && !l.borehole) return false;
+    if (fenced && !l.fenced) return false;
     if (l.price < minPrice) return false;
     if (l.price > maxPrice) return false;
     return true;
@@ -400,14 +165,12 @@ function applyFilters() {
 }
 
 function resetFilters() {
-  document.getElementById('filter-city').value = '';
   document.getElementById('filter-suburb').value = '';
   document.getElementById('filter-bedrooms').value = '';
   document.getElementById('filter-type').value = '';
   document.getElementById('filter-currency').value = '';
-  document.getElementById('filter-solar').value = '';
-  document.getElementById('filter-borehole').value = '';
-  document.getElementById('filter-fenced').value = '';
+  ['filter-wifi', 'filter-electric-stove', 'filter-gas-stove', 'filter-fridge', 'filter-solar', 'filter-borehole', 'filter-fenced']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.checked = false; });
   document.getElementById('filter-min-price').value = '';
   document.getElementById('filter-max-price').value = '';
   renderListings(currentListings);
@@ -452,8 +215,9 @@ function renderListings(listings) {
       <div class="card-amenities">
           ${l.solar ? '<span class="amenity-badge yes">Solar</span>' : ''}
           ${l.borehole ? '<span class="amenity-badge yes">Borehole</span>' : ''}
+          ${l.wifi ? '<span class="amenity-badge yes">Wi-Fi</span>' : ''}
           ${l.fenced ? '<span class="amenity-badge yes">Fenced</span>' : ''}
-          <span class="amenity-badge">${l.bedrooms} Bed</span>
+          <span class="amenity-badge">Room for ${l.bedrooms}</span>
           <span class="amenity-badge">${l.type}</span>
       </div>
         <button class="card-action">View Details</button>

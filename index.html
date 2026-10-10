@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light">
-    <title>ZimRent — Find Your Perfect Rental in Zimbabwe</title>
+    <title>Homify — Student Accommodation for NUST</title>
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
@@ -12,7 +12,7 @@
 <body>
     <!-- Navbar -->
     <nav class="navbar">
-        <a href="index.html" class="nav-brand">Zim<span>Rent</span></a>
+        <a href="index.html" class="nav-brand">Homi<span>fy</span></a>
         <ul class="nav-links">
             <li><a href="index.html" class="active">Home</a></li>
             <li><a href="listings.html">Browse</a></li>
@@ -30,18 +30,18 @@
 
     <!-- Hero -->
     <section class="hero">
-        <h1>Find Your Home in Zimbabwe</h1>
-        <p>Search rental properties across Harare, Bulawayo, Mutare, and more. Direct contact with landlords, no middlemen fees.</p>
+        <canvas id="hero-canvas" aria-hidden="true"></canvas>
+        <h1>Find Your Accommodation in Bulawayo</h1>
+        <p>Student accommodation across Selbourne Park, Riverside, Matsheumhlope, and more. Direct contact with landlords, no middlemen fees.</p>
         
         <div class="search-box">
-            <input type="text" class="search-input" id="hero-city" placeholder="Search by city, suburb..." aria-label="Search by city or suburb">
-            <select class="search-select" id="hero-bedrooms" aria-label="Minimum bedrooms">
-                <option value="">Any Bedrooms</option>
-                <option value="1">1+</option>
-                <option value="2">2+</option>
-                <option value="3">3+</option>
-                <option value="4">4+</option>
-                <option value="5">5+</option>
+            <input type="text" class="search-input" id="hero-city" placeholder="Search by suburb..." aria-label="Search by suburb">
+            <select class="search-select" id="hero-bedrooms" aria-label="Room for how many people">
+                <option value="">Room For: Any</option>
+                <option value="1">Room For: 1</option>
+                <option value="2">Room For: 2</option>
+                <option value="3">Room For: 3</option>
+                <option value="4">Room For: 4</option>
             </select>
             <button class="search-btn" onclick="searchFromHero()">Search Properties</button>
         </div>
@@ -56,7 +56,7 @@
             </div>
             <div class="stat-card">
                 <div class="stat-number" id="total-cities">0</div>
-                <div class="stat-label">Cities Covered</div>
+                <div class="stat-label">Suburbs Covered</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number">24/7</div>
@@ -82,14 +82,14 @@
     <!-- Features -->
     <div class="container" style="margin-top:3rem;">
         <div class="section-header">
-            <h2>Why Choose ZimRent?</h2>
-            <p>Built for Zimbabwe's rental market</p>
+            <h2>Why Choose Homify?</h2>
+            <p>Built for NUST students</p>
         </div>
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:1.5rem;">
                 <div style="background:white; padding:1.8rem; border-radius:12px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
                 <div style="font-size:2.5rem; margin-bottom:1rem;"><i class="fas fa-search" style="color:var(--primary);"></i></div>
                 <h3>Powerful Search</h3>
-                <p style="color:var(--text-muted);">Filter by city, suburb, bedrooms, price, solar, borehole, and more.</p>
+                <p style="color:var(--text-muted);">Filter by suburb, room for how many people, price, Wi-Fi, stoves, and more.</p>
             </div>
             <div style="background:white; padding:1.8rem; border-radius:12px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
                 <div style="font-size:2.5rem; margin-bottom:1rem;"><i class="fas fa-phone" style="color:var(--primary);"></i></div>
@@ -103,15 +103,15 @@
             </div>
             <div style="background:white; padding:1.8rem; border-radius:12px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
                 <div style="font-size:2.5rem; margin-bottom:1rem;"><i class="fas fa-map-marker-alt" style="color:var(--primary);"></i></div>
-                <h3>Zimbabwe Focused</h3>
-                <p style="color:var(--text-muted);">Built for local needs — multiple currencies, cities, and suburb search.</p>
+                <h3>NUST Focused</h3>
+                <p style="color:var(--text-muted);">Built for NUST students — find accommodation near campus, in your budget.</p>
             </div>
         </div>
     </div>
 
     <!-- Footer -->
     <footer class="footer">
-        <p style="font-weight:700; font-size:1.1rem;">Zim<span style="color:var(--secondary);">Rent</span></p>
+        <p style="font-weight:700; font-size:1.1rem;">Homi<span style="color:var(--secondary);">fy</span></p>
         <div class="footer-links">
             <a href="index.html">Home</a>
             <a href="listings.html">Browse</a>
@@ -119,26 +119,29 @@
             <a href="add-listing.html">List Property</a>
         </div>
         <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1); color:#ccc; font-size:0.9rem;">
-            <div style="margin-bottom:0.4rem;"><i class="fas fa-envelope" style="width:20px;"></i> <a href="mailto:zimrent.online@gmail.com" style="color:#ccc;">zimrent.online@gmail.com</a></div>
+            <div style="margin-bottom:0.4rem;"><i class="fas fa-envelope" style="width:20px;"></i> <a href="mailto:homify.online@gmail.com" style="color:#ccc;">homify.online@gmail.com</a></div>
             <div style="margin-bottom:0.4rem;"><i class="fas fa-phone" style="width:20px;"></i> +263 71 080 2153</div>
             <div><i class="fas fa-phone" style="width:20px;"></i> +27 61 815 5957</div>
         </div>
-        <p style="color:#aaa; font-size:0.85rem; margin-top:1rem;">© 2025 ZimRent. Built for Zimbabwe.</p>
+        <p style="color:#aaa; font-size:0.85rem; margin-top:1rem;">© 2025 Homify. Built for NUST.</p>
     </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="js/auth.js?v=2"></script>
     <script src="js/app.js?v=2"></script>
+    <script src="js/tilt.js?v=1"></script>
+    <script src="js/hero3d.js?v=1"></script>
     <script>
         function searchFromHero() {
-            const city = document.getElementById('hero-city').value.trim();
-            const bedrooms = document.getElementById('hero-bedrooms').value;
+            const suburb = document.getElementById('hero-city').value.trim();
+            const roomFor = document.getElementById('hero-bedrooms').value;
             
             const query = {};
-            if (city) query.city = city;
-            if (bedrooms) query.bedrooms = bedrooms;
+            if (suburb) query.suburb = suburb;
+            if (roomFor) query.bedrooms = roomFor;
             
-            sessionStorage.setItem('zimrent_search', JSON.stringify(query));
+            sessionStorage.setItem('homify_search', JSON.stringify(query));
             window.location.href = 'listings.html';
         }
         
@@ -160,8 +163,8 @@
             
             // Update stats
             document.getElementById('total-listings').textContent = listings.length;
-            const cities = new Set(listings.map(l => l.city));
-            document.getElementById('total-cities').textContent = cities.size;
+            const suburbs = new Set(listings.map(l => l.suburb));
+            document.getElementById('total-cities').textContent = suburbs.size;
             
             // Render featured (first 3)
             const featured = listings.slice(0, 3);
@@ -207,8 +210,9 @@
                     <div class="card-amenities">
                         ${l.solar ? '<span class="amenity-badge yes">Solar</span>' : ''}
                         ${l.borehole ? '<span class="amenity-badge yes">Borehole</span>' : ''}
+                        ${l.wifi ? '<span class="amenity-badge yes">Wi-Fi</span>' : ''}
                         ${l.fenced ? '<span class="amenity-badge yes">Fenced</span>' : ''}
-                        <span class="amenity-badge">${l.bedrooms} Bed</span>
+                        <span class="amenity-badge">Room for ${l.bedrooms}</span>
                     </div>
                     <button class="card-action">View Details</button>
                 </div>

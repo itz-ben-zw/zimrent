@@ -1,4 +1,4 @@
-# ZimRent Backend
+# Homify Backend
 
 Full-stack property rental platform backend built with Node.js + Express + SQLite.
 
@@ -32,7 +32,7 @@ npm start              # start server on http://localhost:3001
 
 ## Database
 
-Uses `sql.js` (SQLite in browser/Node). The database file is created at `server/zimrent.db`.
+Uses `sql.js` (SQLite in browser/Node). The database file is created at `server/homify.db`.
 
 ### Schema
 
