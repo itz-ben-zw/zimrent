@@ -119,7 +119,7 @@ async function initializeApp() {
   
   // One-time cleanup: remove the sample/demo listings and demo landlord
   // account that used to be auto-seeded on every server start. Safe to run
-  // repeatedly — it's a no-op once they're gone.
+  // repeatedly - it's a no-op once they're gone.
   try {
     const demoTitles = [
       'Modern 3-Bed House in Borrowdale',

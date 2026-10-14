@@ -1,5 +1,5 @@
 /* ==========================================
-   HOMIFY — Property Detail Page
+   HOMIFY - Property Detail Page
    ========================================== */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -171,7 +171,7 @@ function initLocationMap(p) {
     '<i class="fas fa-map-pin" style="color:var(--primary);"></i> ' + escapeHtml(areaLabel);
 
   if (!coords || typeof L === 'undefined') {
-    // No coordinates or Leaflet failed to load — keep the label + note.
+    // No coordinates or Leaflet failed to load - keep the label + note.
     mapEl.style.display = 'none';
     document.querySelector('.location-map-wrap').style.display = 'none';
     return;

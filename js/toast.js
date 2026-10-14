@@ -1,5 +1,5 @@
 /* ==========================================
-   HOMIFY — Toast notifications (replaces alert())
+   HOMIFY - Toast notifications (replaces alert())
    Lightweight, dependency-free. Usage:
      toast.success('Listing saved');
      toast.error('Something went wrong');

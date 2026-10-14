@@ -1,12 +1,12 @@
 /* ==========================================
-   HOMIFY — Shared geography helpers
+   HOMIFY - Shared geography helpers
    Approximate coordinates for Bulawayo/NUST
    suburbs so the map has a sensible starting
    pin even before a landlord fine-tunes it.
    ========================================== */
 
 // Approximate centre points for common NUST-area suburbs.
-// These are deliberately coarse ("approximate location") —
+// These are deliberately coarse ("approximate location") -
 // landlords can drag the pin to the exact spot.
 window.SUBURB_COORDS = {
   'Selbourne Park': { lat: -20.1667, lng: 28.5961 },
@@ -27,7 +27,7 @@ window.SUBURB_COORDS = {
 // known coordinates, e.g. a less-common suburb).
 window.DEFAULT_CITY_COORDS = { lat: -20.1500, lng: 28.5800 };
 
-// NUST main campus — handy reference point.
+// NUST main campus - handy reference point.
 window.NUST_COORDS = { lat: -20.1489, lng: 28.5599 };
 
 /**
@@ -43,7 +43,7 @@ window.getSuburbCoords = function (suburb) {
 
 /**
  * Build a Google Maps "Open in Maps" deep link for a coordinate pair.
- * This is just a plain hyperlink — no API key or billing required.
+ * This is just a plain hyperlink - no API key or billing required.
  */
 window.googleMapsLink = function (lat, lng) {
   return 'https://www.google.com/maps/search/?api=1&query=' + lat + ',' + lng;

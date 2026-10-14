@@ -1,5 +1,5 @@
 /* ==========================================
-   HOMIFY — Analytics (opt-in, privacy-aware)
+   HOMIFY - Analytics (opt-in, privacy-aware)
    --------------------------------------------------
    Google Analytics is DISABLED by default. To turn it on:
 

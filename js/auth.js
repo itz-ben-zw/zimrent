@@ -1,5 +1,5 @@
 /* ==========================================
-   HOMIFY — Authentication (Backend-connected)
+   HOMIFY - Authentication (Backend-connected)
    ========================================== */
 
 const API = '/api/auth';

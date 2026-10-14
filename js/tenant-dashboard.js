@@ -1,5 +1,5 @@
 /* ==========================================
-   HOMIFY — Tenant Dashboard
+   HOMIFY - Tenant Dashboard
    ========================================== */
 
 document.addEventListener('DOMContentLoaded', async () => {

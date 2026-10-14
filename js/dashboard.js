@@ -1,5 +1,5 @@
 /* ==========================================
-   HOMIFY — Landlord Dashboard & Add Listing
+   HOMIFY - Landlord Dashboard & Add Listing
    ========================================== */
 
 let editingId = null;

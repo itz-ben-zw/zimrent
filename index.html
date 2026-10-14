@@ -26,70 +26,76 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="page-home">
     <a class="skip-link" href="#main">Skip to main content</a>
     <!-- Navbar -->
     <nav class="navbar">
-        <a href="index.html" class="nav-brand">Homi<span>fy</span></a>
-        <ul class="nav-links">
-            <li><a href="index.html" class="active">Home</a></li>
-            <li><a href="listings.html">Browse</a></li>
-            <li><a href="dashboard.html">Dashboard</a></li>
-            <li><a href="add-listing.html" class="nav-cta">+ List Property</a></li>
-            <li><a href="login.html" id="nav-login">Sign In</a></li>
-            <li><a href="register.html" id="nav-register">Register</a></li>
-            <li><a href="conversations.html" id="nav-messages" style="display:none;">Messages</a></li>
-            <li><a href="profile.html" id="nav-profile" style="display:none;">Profile</a></li>
-            <li><a href="#" id="nav-logout" style="display:none;" onclick="logout(); return false;">Logout</a></li>
-            <li><span id="nav-user-info" style="display:none; font-weight:600; color:var(--primary); cursor:pointer;"></span></li>
-        </ul>
-        <button class="menu-toggle" aria-label="Open navigation menu" aria-expanded="false"☰</button>
+        <div class="nav-inner">
+            <a href="index.html" class="nav-brand">Homi<span>fy</span></a>
+            <ul class="nav-links">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="listings.html">Browse</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="add-listing.html" class="nav-cta">+ List Property</a></li>
+                <li><a href="login.html" id="nav-login">Sign In</a></li>
+                <li><a href="register.html" id="nav-register">Register</a></li>
+                <li><a href="conversations.html" id="nav-messages" style="display:none;">Messages</a></li>
+                <li><a href="profile.html" id="nav-profile" style="display:none;">Profile</a></li>
+                <li><a href="#" id="nav-logout" style="display:none;" onclick="logout(); return false;">Logout</a></li>
+                <li><span id="nav-user-info" style="display:none; font-weight:600; color:var(--primary); cursor:pointer;"></span></li>
+            </ul>
+            <button class="menu-toggle" type="button" aria-label="Open navigation menu" aria-expanded="false">☰</button>
+        </div>
     </nav>
     <main id="main">
-    <!-- Hero -->
-    <section class="hero">
-        <canvas id="hero-canvas" aria-hidden="true"></canvas>
-        <h1>Find Your Accommodation in Bulawayo</h1>
-        <p>Student accommodation across Selbourne Park, Riverside, Matsheumhlope, and more. Contact landlords directly — Homify charges no fees.</p>
-        
-        <div class="search-box">
-            <input type="text" class="search-input" id="hero-city" placeholder="Search by suburb..." aria-label="Search by suburb">
-            <select class="search-select" id="hero-bedrooms" aria-label="Room for how many people">
-                <option value="">Room For: Any</option>
-                <option value="1">Room For: 1</option>
-                <option value="2">Room For: 2</option>
-                <option value="3">Room For: 3</option>
-                <option value="4">Room For: 4</option>
-            </select>
-            <button class="search-btn" onclick="searchFromHero()">Search Properties</button>
+    <!-- Hero: warm Bulawayo noticeboard (no floating shapes / 3D).
+         PHOTO: drop your own Bulawayo / NUST-area photo at
+         assets/hero-bulawayo.jpg - the hero rule in css/style.css
+         picks it up automatically, falling back to campus.jpg. -->
+    <section class="hero" aria-labelledby="hero-heading">
+        <div class="hero-inner">
+            <p class="hero-kicker">Student accommodation &middot; Bulawayo</p>
+            <h1 id="hero-heading">Find your room near NUST</h1>
+            <p class="hero-sub">Rooms and cottages in Selbourne Park, Riverside and Matsheumhlope. Contact landlords directly - Homify charges no fees.</p>
+            <form class="search-box" role="search" aria-label="Search accommodation" onsubmit="return false;">
+                <div class="search-field">
+                    <label for="hero-city">Suburb</label>
+                    <input type="text" class="search-input" id="hero-city" placeholder="e.g. Selbourne Park" autocomplete="address-level3">
+                </div>
+                <div class="search-field">
+                    <label for="hero-bedrooms">Room for</label>
+                    <select class="search-select" id="hero-bedrooms">
+                        <option value="">Any</option>
+                        <option value="1">1 person</option>
+                        <option value="2">2 people</option>
+                        <option value="3">3 people</option>
+                        <option value="4">4+ people</option>
+                    </select>
+                </div>
+                <button class="search-btn" onclick="searchFromHero()">Search rooms</button>
+            </form>
+            <!-- Shown only when 10+ listings exist (see the inline script below).
+                 Otherwise the trust points below carry the value props. -->
+            <dl class="hero-stats" id="hero-stats" hidden>
+                <div><dt>Rooms listed</dt><dd id="stat-listings">&ndash;</dd></div>
+                <div><dt>Suburbs covered</dt><dd id="stat-suburbs">&ndash;</dd></div>
+            </dl>
+            <ul class="hero-trust" id="hero-trust">
+                <li><i class="fas fa-badge-check" aria-hidden="true"></i> No fees, ever</li>
+                <li><i class="fas fa-phone" aria-hidden="true"></i> Contact landlords directly</li>
+                <li><i class="fas fa-graduation-cap" aria-hidden="true"></i> Student areas near NUST</li>
+            </ul>
         </div>
     </section>
 
-    <!-- Stats -->
-    <div class="container">
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-number" id="total-listings">0</div>
-                <div class="stat-label">Properties Listed</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="total-cities">0</div>
-                <div class="stat-label">Suburbs Covered</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">Direct</div>
-                <div class="stat-label">Landlord Contact</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Featured Listings -->
-    <div class="container">
+    <!-- Newly added: first content under the hero, never blank space.
+         Populated from GET /api/properties (newest first) by the inline script below. -->
+    <div class="container home-latest">
         <div class="section-header">
-            <h2>Featured Properties</h2>
-            <p>Latest student accommodation listings</p>
+            <h2 id="latest-heading">Newly added rooms</h2>
+            <p>Fresh listings from landlords near NUST</p>
         </div>
-        <div class="property-grid" id="featured-grid">
+        <div class="property-grid" id="featured-grid" aria-live="polite">
             <!-- Populated by JS -->
         </div>
         <div style="text-align:center; margin-top:2rem;">
@@ -97,7 +103,7 @@
         </div>
     </div>
 
-    <!-- Why Homify — varied layout (lead statement + supporting points) -->
+    <!-- Why Homify - varied layout (lead statement + supporting points) -->
     <div class="container" style="margin-top:3.5rem;">
         <div class="section-header">
             <h2>Why students use Homify</h2>
@@ -109,8 +115,8 @@
                 <div style="font-size:2rem; margin-bottom:0.8rem; color:var(--primary-light);"><i class="fas fa-map-location-dot"></i></div>
                 <h3 style="font-size:1.4rem; margin-bottom:0.5rem;">Accommodation that's actually near campus</h3>
                 <p style="color:var(--text-muted); line-height:1.7;">
-                    Every listing is tagged to a Bulawayo suburb close to NUST — Selbourne Park,
-                    Riverside, Matsheumhlope and more — so you can shortlist by walk or commute,
+                    Every listing is tagged to a Bulawayo suburb close to NUST - Selbourne Park,
+                    Riverside, Matsheumhlope and more - so you can shortlist by walk or commute,
                     not guesswork. Filter by price, how many people a room fits, and the
                     amenities that matter: Wi-Fi, stove and fridge.
                 </p>
@@ -217,7 +223,7 @@
             <ul style="margin:0; padding-left:1.2rem; color:var(--text); line-height:1.9;">
                 <li>Always view a property in person before paying any deposit.</li>
                 <li>Meet the landlord during the day, ideally with a friend or family member.</li>
-                <li>Homify never handles payments &mdash; pay the landlord directly and keep your receipts.</li>
+                <li>Homify never handles payments - pay the landlord directly and keep your receipts.</li>
                 <li>If something feels wrong, don't proceed and <a href="mailto:homify.online@gmail.com">let us know</a>.</li>
             </ul>
         </div>
@@ -291,11 +297,9 @@
     </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="js/auth.js?v=2"></script>
     <script src="js/app.js?v=2"></script>
     <script src="js/tilt.js?v=1"></script>
-    <script src="js/hero3d.js?v=1"></script>
     <script>
         function searchFromHero() {
             const suburb = document.getElementById('hero-city').value.trim();
@@ -309,6 +313,15 @@
             window.location.href = 'listings.html';
         }
         
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         async function initHomePage() {
             const headers = { 'Content-Type': 'application/json' };
             const session = getSession ? getSession() : null;
@@ -335,27 +348,34 @@
                 console.error('Failed to load listings:', err);
             }
             
-            // Update stats
-            document.getElementById('total-listings').textContent = listings.length;
-            const suburbs = new Set(listings.map(l => l.suburb));
-            document.getElementById('total-cities').textContent = suburbs.size;
-            
-            // Render featured (first 3)
+            // Hero stats - only surface numbers once there are enough
+            // listings for them to mean something (10+). Otherwise the
+            // trust points below carry the value props.
+            const heroStats = document.getElementById('hero-stats');
+            if (heroStats && listings.length >= 10) {
+                document.getElementById('stat-listings').textContent = listings.length;
+                document.getElementById('stat-suburbs').textContent = new Set(listings.map(l => l.suburb)).size;
+                heroStats.hidden = false;
+            }
+
+            // Newly added (first 3)
             const featured = listings.slice(0, 3);
             const grid = document.getElementById('featured-grid');
-            
+            if (!grid) return;
+
             if (featured.length === 0) {
                 grid.innerHTML = '<p style="text-align:center; grid-column:1/-1; color:var(--text-muted);">No listings yet. Check back soon!</p>';
-                return;
+            } else {
+                grid.innerHTML = featured.map(l => renderCardHTML(l)).join('');
             }
-            
-            grid.innerHTML = featured.map(l => renderCardHTML(l)).join('');
-            
+        }
+
+        function wireMenu() {
             // Mobile menu toggle
             document.querySelector('.menu-toggle')?.addEventListener('click', () => {
                 document.querySelector('.nav-links').classList.toggle('active');
             });
-            
+
             // Close mobile menu on link click
             document.querySelectorAll('.nav-links a').forEach(a => {
                 a.addEventListener('click', () => {
@@ -398,7 +418,10 @@
             window.location.href = 'property.html';
         }
         
-        document.addEventListener('DOMContentLoaded', initHomePage);
+        document.addEventListener('DOMContentLoaded', () => {
+            wireMenu();
+            initHomePage();
+        });
     </script>
     <script src="js/analytics.js?v=1"></script>
     <script src="js/cookie-consent.js?v=1"></script>

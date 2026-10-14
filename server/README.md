@@ -17,18 +17,18 @@ npm start              # start server on http://localhost:3001
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `PORT` | No | `3001` | Server port |
-| `JWT_SECRET` | **Yes** | — | Secret for JWT signing |
+| `JWT_SECRET` | **Yes** | - | Secret for JWT signing |
 | `JWT_EXPIRES_IN` | No | `7d` | Token expiry |
 | `UPLOAD_DIR` | No | `../uploads` | Image upload folder |
 | `FRONTEND_URL` | No | `*` | CORS origin (use your domain in prod) |
-| `ADMIN_EMAIL` | No | — | Auto-create admin if set |
+| `ADMIN_EMAIL` | No | - | Auto-create admin if set |
 | `ADMIN_PASSWORD` | No | `admin123` | Admin password |
 
 ## Scripts
 
-- `npm start` — run server
-- `npm run dev` — run with auto-reload
-- `npm run migrate` — run database migrations
+- `npm start` - run server
+- `npm run dev` - run with auto-reload
+- `npm run migrate` - run database migrations
 
 ## Database
 
@@ -36,12 +36,12 @@ Uses `sql.js` (SQLite in browser/Node). The database file is created at `server/
 
 ### Schema
 
-- `users` — accounts with role-based access
-- `properties` — rental listings owned by a landlord
-- `applications` — tenant applications for properties
-- `favorites` — saved properties per user
-- `messages` — direct messages between users
-- `notifications` — in-app notifications
+- `users` - accounts with role-based access
+- `properties` - rental listings owned by a landlord
+- `applications` - tenant applications for properties
+- `favorites` - saved properties per user
+- `messages` - direct messages between users
+- `notifications` - in-app notifications
 
 ## API Overview
 

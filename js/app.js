@@ -1,5 +1,5 @@
 /* ==========================================
-   HOMIFY — Shared Utilities & Data Management
+   HOMIFY - Shared Utilities & Data Management
    ========================================== */
 
 const STORAGE_KEY = 'homify_listings';

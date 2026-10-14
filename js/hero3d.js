@@ -1,5 +1,5 @@
 /* ==========================================
-   HOMIFY — 3D Hero Scene (Three.js)
+   HOMIFY - 3D Hero Scene (Three.js)
    Floating houses & shapes, OKX-style.
    Requires three.js loaded globally first.
    Renders into #hero-canvas inside .hero.
@@ -28,7 +28,7 @@
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
     camera.position.set(0, 0, 14);
 
-    /* Lights — moody, with a neon key so emissive shapes pop on dark */
+    /* Lights - moody, with a neon key so emissive shapes pop on dark */
     scene.add(new THREE.AmbientLight(0x8899bb, 0.55));
     const keyLight = new THREE.DirectionalLight(0xbfe6ff, 0.85);
     keyLight.position.set(5, 8, 6);
@@ -37,7 +37,7 @@
     rimLight.position.set(-6, -3, 4);
     scene.add(rimLight);
 
-    /* Brand materials — emissive/neon tuned for a dark scene */
+    /* Brand materials - emissive/neon tuned for a dark scene */
     const MAT = {
         white: new THREE.MeshStandardMaterial({ color: 0xeaf2ff, roughness: 0.25, metalness: 0.10, emissive: 0x0a2a44, emissiveIntensity: 0.6 }),
         azure: new THREE.MeshStandardMaterial({ color: 0x29a8f5, roughness: 0.25, metalness:0.15, emissive: 0x0d5a8f, emissiveIntensity: 0.9 }),
@@ -73,7 +73,7 @@
     orbit.rotation.x = Math.PI / 2.4;
     scene.add(orbit);
 
-    /* House — echoes the logo (body + roof + door) */
+    /* House - echoes the logo (body + roof + door) */
     function makeHouse(bodyMat, roofMat) {
         const g = new THREE.Group();
         const body = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.1, 1.4), bodyMat);
@@ -89,7 +89,7 @@
         return g;
     }
 
-    /* Location pin — the other logo motif */
+    /* Location pin - the other logo motif */
     function makePin(mat) {
         const g = new THREE.Group();
         const ball = new THREE.Mesh(new THREE.SphereGeometry(0.6, 28, 20), mat);

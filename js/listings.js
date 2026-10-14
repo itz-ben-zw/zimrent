@@ -1,5 +1,5 @@
 /* ==========================================
-   HOMIFY — Listings Page: Browse & Filter
+   HOMIFY - Listings Page: Browse & Filter
    ========================================== */
 
 const ZIM_LOCATIONS = {

@@ -1,5 +1,5 @@
 /* ==========================================
-   HOMIFY — Dark 3D Premium (OKX-style)
+   HOMIFY - Dark 3D Premium (OKX-style)
    Deep navy "cockpit" surfaces + neon azure accents.
    All tokens verified WCAG AA on their backgrounds.
    ========================================== */
@@ -8,9 +8,9 @@
 :root {
     /* Dark-first. Form controls, scrollbars and UA widgets adopt our palette. */
     color-scheme: dark;
-    /* Homify brand palette — derived from the logo (bright azure),
+    /* Homify brand palette - derived from the logo (bright azure),
        re-tuned as NEON accents against deep-navy surfaces. */
-    --primary: #29a8f5;        /* neon azure — links/accents on dark (6.63:1 on surface) */
+    --primary: #29a8f5;        /* neon azure - links/accents on dark (6.63:1 on surface) */
     --primary-dark: #1f6fd0;   /* solid buttons w/ white text (4.95:1) + focus-safe */
     --primary-light: #56ccf2;  /* bright cyan for glows/hover (9.36:1) */
     --secondary: #3bb8f7;
@@ -24,7 +24,7 @@
     --surface: #101a2e;        /* cards / navbar */
     --surface-2: #1a2440;      /* inputs / hover / elevated */
     --text: #eaf2ff;           /* body text (17.45:1 on bg) */
-    --text-dark: #eaf2ff;      /* kept name — headings/cards (now light) */
+    --text-dark: #eaf2ff;      /* kept name - headings/cards (now light) */
     --text-muted: #93a4c0;     /* secondary text (6.87:1 on surface) */
     --border: #22314f;
     --glow: 0 0 24px rgba(41,168,245,0.35);
@@ -42,7 +42,7 @@ body {
     color: var(--text);
     background: var(--bg);
     line-height: 1.6;
-    /* Subtle aurora glow behind everything — the "premium terminal" feel.
+    /* Subtle aurora glow behind everything - the "premium terminal" feel.
        Static gradient so it costs nothing; respects reduced-motion below. */
     background-image:
         radial-gradient(900px 500px at 12% -5%, rgba(41,168,245,0.10), transparent 60%),
@@ -61,14 +61,23 @@ button { cursor: pointer; font-family: inherit; }
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
-    padding: 0.8rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     position: sticky;
     top: 0;
     z-index: 100;
     box-shadow: 0 2px 18px rgba(0,0,0,0.5);
+}
+
+/* Inner row matches .container (1200px + 2rem gutters) so the nav lines
+   up with the page content instead of ragging to the window edges. */
+.nav-inner {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0.8rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
 }
 
 .nav-brand {
@@ -100,13 +109,12 @@ button { cursor: pointer; font-family: inherit; }
 }
 
 .nav-cta {
-    background: var(--brand-gradient);
+    background: var(--primary-dark);
     color: white !important;
     padding: 0.5rem 1.2rem !important;
-    box-shadow: var(--glow);
 }
 
-.nav-cta:hover { filter: brightness(0.92); }
+.nav-cta:hover { background: #1a5fb0; }
 
 /* Mobile menu */
 .menu-toggle { display: none; background: none; border: none; font-size: 1.5rem; color: var(--text-dark); }
@@ -114,69 +122,30 @@ button { cursor: pointer; font-family: inherit; }
 /* Container */
 .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
 
-/* Hero */
+/* Hero - warm neighbourhood noticeboard.
+   Calm and human: no floating shapes, no 3D canvas.
+   PHOTO: drop your own Bulawayo / NUST-area photo at
+   ../assets/hero-bulawayo.jpg - the layers below fall back to
+   campus.jpg and then the warm wash if that file is missing. */
 .hero {
     position: relative;
-    /* Campus photo background. NOTE: campus.jpg is a web-sourced placeholder - replace with an owned/licensed photo before public launch. */
+    /* Per-band scrim: alphas tuned to the measured luminance of the photo
+       behind each text block (kicker/h1/sub/stats/trust) so every hero
+       string keeps WCAG AA, while lighter stops let the photo show at the
+       top and bottom where there is no text. */
     background:
-        linear-gradient(180deg, rgba(7,11,22,0.55) 0%, rgba(7,11,22,0.78) 55%, rgba(7,11,22,0.92) 100%),
-        linear-gradient(rgba(9,58,105,0.55), rgba(9,58,105,0.55)),
-        url('../assets/campus.jpg');
+        linear-gradient(180deg, rgba(7,11,22,0.36) 0%, rgba(7,11,22,0.52) 16%, rgba(7,11,22,0.47) 45%, rgba(7,11,22,0.50) 68%, rgba(7,11,22,0.46) 88%, rgba(7,11,22,0.34) 100%),
+        linear-gradient(rgba(58,42,24,0.15), rgba(58,42,24,0.15)),
+        url('../assets/hero-bulawayo.jpg'),
+        url('../assets/campus.jpg'),
+        linear-gradient(135deg, #2b2013 0%, #3a2b19 50%, #241a10 100%);
     background-size: cover;
     background-position: center;
     color: white;
-    padding: 4rem 2rem;
+    padding: 4.5rem 2rem 4rem;
     text-align: center;
     overflow: hidden;
-}
-
-/* Soft floating neon glows — echoes the logo's glossy, rounded feel */
-.hero::before,
-.hero::after {
-    content: '';
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(64px);
-    opacity: 0.5;
-    pointer-events: none;
-}
-
-.hero::before {
-    width: 420px;
-    height: 420px;
-    background: #29a8f5;
-    top: -160px;
-    right: -120px;
-    animation: heroOrbA 16s ease-in-out infinite;
-}
-
-.hero::after {
-    width: 340px;
-    height: 340px;
-    background: #7b5cff;
-    bottom: -140px;
-    left: -100px;
-    animation: heroOrbB 20s ease-in-out infinite;
-}
-
-@keyframes heroOrbA {
-    0%, 100% { transform: translate(0, 0); }
-    50% { transform: translate(-24px, 30px); }
-}
-
-@keyframes heroOrbB {
-    0%, 100% { transform: translate(0, 0); }
-    50% { transform: translate(30px, -20px); }
-}
-
-#hero-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    pointer-events: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 /* 3D card tilt gloss */
@@ -207,24 +176,91 @@ button { cursor: pointer; font-family: inherit; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .hero::before, .hero::after { animation: none; }
     .stat-card, .dash-card, .property-card { transition: none; will-change: auto; }
 }
 
-.hero > * { position: relative; z-index: 1; }
+.hero-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+.hero-kicker {
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #cfe7ff; /* azure kicker - AA on the hero photo */
+    background: rgba(41, 168, 245, 0.12);
+    border: 1px solid rgba(86, 204, 242, 0.35);
+    border-radius: 999px;
+    padding: 0.35rem 0.9rem;
+    margin-bottom: 1.2rem;
+}
 
 .hero h1 {
-    font-size: 2.8rem;
+    font-size: clamp(2rem, 5vw, 2.9rem);
     font-weight: 800;
-    margin-bottom: 1rem;
+    line-height: 1.15;
+    margin-bottom: 0.9rem;
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
 }
 
-.hero p {
-    font-size: 1.15rem;
-    opacity: 0.95;
-    max-width: 600px;
-    margin: 0 auto 2rem;
+.hero-sub {
+    font-size: 1.1rem;
+    line-height: 1.65;
+    color: #e7eefa;
+    max-width: 620px;
+    margin: 0 auto 1.8rem;
 }
+
+/* Trust points under the search - the honest value props */
+.hero-trust {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.6rem 1.6rem;
+    margin-top: 1.6rem;
+    font-size: 0.95rem;
+    color: #d9e4f7;
+}
+
+.hero-trust i { color: var(--primary-light); margin-right: 0.4rem; }
+
+/* Live stats - kept hidden in the markup until 10+ listings exist
+   (the homepage script flips heroStats.hidden) */
+.hero-stats {
+    display: inline-flex;
+    justify-content: center;
+    gap: 2.5rem;
+    margin-top: 1.6rem;
+    padding: 0.9rem 1.6rem;
+    /* Own backdrop: keeps the stats readable without over-darkening the
+       photo band behind them for everyone else. */
+    background: rgba(7,11,22,0.78);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 14px;
+}
+
+.hero-stats div { text-align: center; }
+
+.hero-stats dt {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text);
+}
+
+.hero-stats dd {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: var(--primary-light);
+}
+
+.hero-stats[hidden] { display: none; }
 
 /* Search Bar */
 .search-box {
@@ -238,7 +274,29 @@ button { cursor: pointer; font-family: inherit; }
     margin: 0 auto;
     box-shadow: var(--shadow-lg);
     flex-wrap: wrap;
+    align-items: flex-end;
+    text-align: left;
 }
+
+/* Labeled field inside the noticeboard search */
+.search-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+    min-width: 170px;
+}
+
+.search-field label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.search-field .search-input,
+.search-field .search-select { width: 100%; }
 
 .search-input, .search-select {
     padding: 0.7rem 1rem;
@@ -254,18 +312,17 @@ button { cursor: pointer; font-family: inherit; }
 .search-input::placeholder { color: var(--text-muted); }
 
 .search-btn {
-    background: var(--brand-gradient);
+    background: var(--primary-dark);
     color: white;
     border: none;
     padding: 0.7rem 1.5rem;
     border-radius: var(--radius-sm);
     font-weight: 700;
     font-size: 0.95rem;
-    transition: filter 0.2s, transform 0.2s;
-    box-shadow: var(--glow);
+    transition: background 0.2s, transform 0.2s;
 }
 
-.search-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.search-btn:hover { background: #1a5fb0; transform: translateY(-1px); }
 
 /* Stats */
 .stats {
@@ -306,7 +363,7 @@ button { cursor: pointer; font-family: inherit; }
     margin-bottom: 0.4rem;
 }
 
-/* "Why Homify" varied layout — lead + stacked supporting points */
+/* "Why Homify" varied layout - lead + stacked supporting points */
 .why-grid {
     display: grid;
     grid-template-columns: 1.15fr 1fr;
@@ -316,7 +373,7 @@ button { cursor: pointer; font-family: inherit; }
     .why-grid { grid-template-columns: 1fr; }
 }
 
-/* "How it works" — horizontal stepped flow (not identical cards) */
+/* "How it works" - horizontal stepped flow (not identical cards) */
 .steps-flow {
     display: flex;
     align-items: stretch;
@@ -830,10 +887,31 @@ button { cursor: pointer; font-family: inherit; }
 @media (max-width: 768px) {
     .nav-links { display: none; }
     .menu-toggle { display: block; }
-    .search-box { flex-direction: column; }
+    .search-box { flex-direction: column; align-items: stretch; }
     .detail-content { grid-template-columns: 1fr; }
     .form-row { grid-template-columns: 1fr; }
     .hero h1 { font-size: 2rem; }
+
+    /* Hamburger menu panel (JS toggles .active on .nav-links) */
+    .nav-links.active {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.8rem 1.2rem;
+        gap: 0.3rem;
+        box-shadow: var(--shadow-lg);
+    }
+    .nav-links.active a {
+        display: block;
+        padding: 0.6rem 0.8rem;
+    }
+    .nav-cta { text-align: center; }
+}
 
 /* ==========================================
    ACCESSIBILITY
@@ -853,7 +931,7 @@ summary:focus-visible {
     border-radius: 4px;
 }
 
-/* Skip link — first tabbable element, visually hidden until focused. */
+/* Skip link - first tabbable element, visually hidden until focused. */
 .skip-link {
     position: absolute;
     left: 1rem;
@@ -1077,5 +1155,3 @@ summary:focus-visible {
 }
 .footer-legal a { color: #d6dee6; text-decoration: none; }
 .footer-legal a:hover { color: #fff; text-decoration: underline; }
-
-}

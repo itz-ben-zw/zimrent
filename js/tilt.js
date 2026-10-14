@@ -1,5 +1,5 @@
 /* ==========================================
-   HOMIFY — 3D Card Tilt (OKX-style)
+   HOMIFY - 3D Card Tilt (OKX-style)
    Cards tilt toward the cursor with a
    glossy light sheen. Works on dynamically
    rendered cards via event delegation.

@@ -1,12 +1,12 @@
 /* ==========================================
-   HOMIFY — Cookie / Privacy Notice Consent
+   HOMIFY - Cookie / Privacy Notice Consent
    ------------------------------------------------------------
    No advertising or analytics trackers are used. The only
    storage we set is:
      • sessionStorage / localStorage for login + your UI
        preferences (strictly necessary for the site to work)
      • Third-party services (CDNs, map tiles, Google Sign-In)
-       that may set their own cookies — disclosed in cookies.html
+       that may set their own cookies - disclosed in cookies.html
 
    This bar collects a single record of whether the visitor
    acknowledged our notice (Cyber & Data Protection Act §10/§15).
