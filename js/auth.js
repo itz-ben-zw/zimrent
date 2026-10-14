@@ -208,6 +208,12 @@ function resetPhoneLogin() {
 }
 
 // --- Google Sign-In ---
+// Uses Google Identity Services token flow. The page origin MUST be listed in
+// "Authorized JavaScript origins" of this client in Google Cloud Console, else
+// Google shows "Error 400: origin_mismatch". Current origins:
+//   https://homify-nust.onrender.com  (live)
+//   http://localhost:3001             (local dev)
+// See GOOGLE_SETUP.md for full setup steps.
 function handleGoogleLogin() {
   const GOOGLE_CLIENT_ID = '264173024062-vci0i2i5i75524gu8cnfpf79l48i241q.apps.googleusercontent.com';
   if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes('YOUR_GOOGLE_CLIENT_ID')) {

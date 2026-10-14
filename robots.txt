@@ -8,4 +8,4 @@ Disallow: /profile.html
 Disallow: /conversations.html
 Disallow: /chat.html
 
-Sitemap: https://homify.onrender.com/sitemap.xml
+Sitemap: https://homify-nust.onrender.com/sitemap.xml
