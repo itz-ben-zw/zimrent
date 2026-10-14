@@ -165,7 +165,6 @@ async function handleListingSubmit(e) {
     const btn = document.querySelector('.form-card button[type="submit"]');
     btn.disabled = true;
     btn.textContent = 'Saved';
-    btn.style.background = 'var(--accent-dark)';
 
     if (window.toast) toast.success('Your listing has been submitted.');
 
