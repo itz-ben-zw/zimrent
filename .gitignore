@@ -1,3 +1,5 @@
 _*.png
 _*.log
 _cleanup_*.js
+_*.ps1
+_*.csv

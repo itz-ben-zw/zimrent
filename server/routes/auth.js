@@ -317,7 +317,7 @@ router.post('/refresh-token', async (req, res) => {
   }
 
   const db = getDb();
-  const row = await db.prepare('SELECT * FROM refresh_tokens WHERE token = ? AND revoked = 0 AND expiresAt > CURRENT_TIMESTAMP').get(refreshToken);
+  const row = await db.prepare('SELECT * FROM refresh_tokens WHERE token = ? AND revoked = 0 AND expiresAt::timestamptz > CURRENT_TIMESTAMP').get(refreshToken);
   if (!row) {
     return res.status(401).json({ error: 'Invalid refresh token' });
   }
@@ -373,7 +373,7 @@ router.put('/profile', authenticate, upload.single('profileImage'), async (req, 
 router.post('/verify-email/:token', async (req, res) => {
   const token = req.params.token;
   const db = getDb();
-  const row = await db.prepare('SELECT * FROM email_verifications WHERE token = ? AND verified = 0 AND expiresAt > CURRENT_TIMESTAMP').get(token);
+  const row = await db.prepare('SELECT * FROM email_verifications WHERE token = ? AND verified = 0 AND expiresAt::timestamptz > CURRENT_TIMESTAMP').get(token);
   if (!row) {
     return res.status(400).json({ error: 'Invalid or expired verification token' });
   }
@@ -415,7 +415,7 @@ router.post('/reset-password', async (req, res) => {
   }
 
   const db = getDb();
-  const reset = await db.prepare('SELECT * FROM password_resets WHERE token = ? AND used = 0 AND expiresAt > CURRENT_TIMESTAMP').get(token);
+  const reset = await db.prepare('SELECT * FROM password_resets WHERE token = ? AND used = 0 AND expiresAt::timestamptz > CURRENT_TIMESTAMP').get(token);
   if (!reset) {
     return res.status(400).json({ error: 'Invalid or expired reset token' });
   }
