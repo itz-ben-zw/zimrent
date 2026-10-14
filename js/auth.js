@@ -240,21 +240,13 @@ function handleGoogleLogin() {
         if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
         return;
       }
-      fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: { Authorization: 'Bearer ' + response.access_token }
-      })
-      .then(r => r.json())
-      .then(googleUser => {
-        return fetch(`${API}/google`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: googleUser.email,
-            fullName: googleUser.name,
-            googleId: googleUser.sub,
-            profileImage: googleUser.picture
-          })
-        });
+      // Send the access token to our backend; it verifies the token with
+      // Google and only then creates the session (never trust profile data
+      // posted straight from the browser).
+      fetch(`${API}/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken: response.access_token })
       })
       .then(r => r.json())
       .then(data => {
@@ -371,11 +363,19 @@ async function handleRegister(e) {
     }
 
     loginUser(data);
-    if (data.user.role === 'tenant') {
-      window.location.href = 'tenant-dashboard.html';
-    } else {
-      window.location.href = 'dashboard.html';
+    const dest = data.user.role === 'tenant' ? 'tenant-dashboard.html' : 'dashboard.html';
+    // Registration is only half the story: tell the user honestly whether a
+    // verification email actually went out instead of silently redirecting.
+    const successEl = document.getElementById('auth-success');
+    if (successEl) {
+      if (data.emailVerificationSent === true) {
+        successEl.textContent = 'Account created! We sent a verification link to ' + email + '. Check your inbox (and spam folder) - you can keep browsing while you confirm it.';
+      } else if (data.emailVerificationSent === false) {
+        successEl.textContent = 'Account created, but we could not send a verification email right now. You can keep using Homify; please ask support to verify ' + email + ' later.';
+      }
+      successEl.style.display = 'block';
     }
+    setTimeout(() => { window.location.href = dest; }, data.emailVerificationSent ? 3500 : 1500);
   } catch (err) {
     showError('Network error. Please try again.');
   }

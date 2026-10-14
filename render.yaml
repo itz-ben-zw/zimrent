@@ -26,3 +26,32 @@ services:
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
+      # Email (SMTP) - register/reset emails are not sent until these are set.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      # Phone OTP - without a real provider, phone sign-in returns 503 in prod.
+      - key: SMS_PROVIDER
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_FROM_NUMBER
+        sync: false
+      - key: AFRICASTALKING_USERNAME
+        sync: false
+      - key: AFRICASTALKING_API_KEY
+        sync: false
+      - key: AFRICASTALKING_SENDER_ID
+        sync: false
+      # Google Sign-In token verification (must match js/auth.js client ID).
+      - key: GOOGLE_CLIENT_ID
+        sync: false

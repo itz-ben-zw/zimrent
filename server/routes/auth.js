@@ -5,6 +5,8 @@ const { v4: uuidv4 } = require('uuid');
 const { getDb } = require('../database/db');
 const { authenticate } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const emailService = require('../services/emailService');
+const smsService = require('../services/smsService');
 
 const router = express.Router();
 
@@ -101,10 +103,22 @@ router.post('/register', upload.single('profileImage'), async (req, res) => {
   const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
   await db.prepare('INSERT INTO email_verifications (id, userId, token, expiresAt) VALUES (?, ?, ?, ?)').run(uuidv4(), user.id, verifyToken, verifyExpires);
 
+  // Send the verification email for real (non-fatal if delivery fails; the
+  // user can resend later). emailVerificationSent tells the frontend whether
+  // a mail actually went out, so we never silently pretend it did.
+  const emailVerificationSent = await emailService.sendVerificationEmail(email, fullName, verifyToken);
+
   const accessToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
   const refreshToken = await issueRefreshToken(id, req);
 
-  res.status(201).json({ token: accessToken, refreshToken, verifyToken, user: userResponse(user) });
+  const responseBody = { token: accessToken, refreshToken, user: userResponse(user), emailVerificationSent };
+  // Dev only: return the raw token so automated tests can exercise the
+  // verify-email flow without SMTP. Never returned in production, where it
+  // would let anyone "verify" without receiving the email.
+  if (process.env.NODE_ENV !== 'production') {
+    responseBody.verifyToken = verifyToken;
+  }
+  res.status(201).json(responseBody);
 });
 
 async function issueRefreshToken(userId, req) {
@@ -143,36 +157,63 @@ router.post('/login', async (req, res) => {
 });
 
 // POST /api/auth/google - Google Sign-In
-router.post('/google', async (req, res) => {
-  const { email, fullName, googleId, profileImage } = req.body;
+// The client sends the Google access token from Google Identity Services;
+// the server verifies it with Google and trusts ONLY that result. Accepting
+// email/googleId posted by the browser would let anyone sign in as any user.
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '264173024062-vci0i2i5i75524gu8cnfpf79l48i241q.apps.googleusercontent.com';
 
-  if (!email || !googleId) {
-    return res.status(400).json({ error: 'Email and Google ID are required' });
+router.post('/google', async (req, res) => {
+  const { accessToken } = req.body;
+
+  if (!accessToken || typeof accessToken !== 'string') {
+    return res.status(400).json({ error: 'Google access token is required' });
+  }
+
+  let googleUser;
+  try {
+    const resp = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`);
+    if (!resp.ok) {
+      return res.status(401).json({ error: 'Invalid or expired Google token' });
+    }
+    const info = await resp.json();
+    // Token must have been issued for OUR client ID, not another app's.
+    if (info.aud && info.aud !== GOOGLE_CLIENT_ID) {
+      return res.status(401).json({ error: 'Google token was issued for a different app' });
+    }
+    if (!info.sub || !info.email) {
+      return res.status(401).json({ error: 'Google account is missing an email address' });
+    }
+    googleUser = { sub: info.sub, email: info.email, name: info.name || '', picture: info.picture || '' };
+  } catch (err) {
+    console.warn('Google token verification failed:', err.message);
+    return res.status(502).json({ error: 'Could not verify Google sign-in. Please try again.' });
   }
 
   const db = getDb();
-  let user = await db.prepare('SELECT * FROM users WHERE providerId = ? AND authProvider = ?').get(googleId, 'google');
+  let user = await db.prepare('SELECT * FROM users WHERE providerId = ? AND authProvider = ?').get(googleUser.sub, 'google');
 
   if (!user) {
     // Check if email already registered
-    const existing = await db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    const existing = await db.prepare('SELECT * FROM users WHERE email = ?').get(googleUser.email);
     if (existing) {
-      // Link Google account to existing user
-      await db.prepare('UPDATE users SET authProvider = ?, providerId = ?, profileImage = COALESCE(NULLIF(?, \'\'), profileImage), updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run('google', googleId, profileImage || '', existing.id);
+      // Link Google account to existing user. Google verified this address,
+      // so it is safe to mark the email verified.
+      await db.prepare(`UPDATE users SET authProvider = 'google', providerId = ?, emailVerified = 1, profileImage = COALESCE(NULLIF(?, ''), profileImage), updatedAt = CURRENT_TIMESTAMP WHERE id = ?`).run(googleUser.sub, googleUser.picture || '', existing.id);
       user = await db.prepare('SELECT * FROM users WHERE id = ?').get(existing.id);
     } else {
-      // Create new user with Google
+      // Create new user with Google (email already verified by Google)
       const id = uuidv4();
-      await db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, username, profileImage, authProvider, providerId) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-        id, fullName || email.split('@')[0], email, bcrypt.hashSync(uuidv4(), 10), 'tenant', null, profileImage || '', 'google', googleId
+      await db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, username, profileImage, authProvider, providerId, emailVerified) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`).run(
+        id, googleUser.name || googleUser.email.split('@')[0], googleUser.email, bcrypt.hashSync(uuidv4(), 10), 'tenant', null, googleUser.picture || '', 'google', googleUser.sub
       );
       user = await db.prepare('SELECT * FROM users WHERE id = ?').get(id);
     }
   }
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
-  res.json({ token, user: userResponse(user) });
+  const refreshToken = await issueRefreshToken(user.id, req);
+  res.json({ token, refreshToken, user: userResponse(user) });
 });
 
 // POST /api/auth/phone/send-otp - Send OTP to phone number
@@ -185,79 +226,40 @@ router.post('/phone/send-otp', async (req, res) => {
 
   const cleanPhone = phone.replace(/[\s\-]/g, '');
   const otp = generateOTP();
-  
+
+  const isProd = process.env.NODE_ENV === 'production';
+
+  // On production, silently pretending an SMS was sent is worse than
+  // failing: users wait forever for a code that never arrives. Until a real
+  // provider (twilio / africastalking) is configured, fail loudly.
+  if (isProd && !smsService.isRealProvider()) {
+    return res.status(503).json({
+      error: 'Phone sign-in is not available yet. Please sign in with email or Google instead.'
+    });
+  }
+
   // Store OTP with 5-minute expiry
   otpStore.set(cleanPhone, { otp, expiresAt: Date.now() + 5 * 60 * 1000 });
 
-  sendSMS(cleanPhone, otp).catch(err => {
+  let sent = false;
+  try {
+    sent = await smsService.sendSMS(cleanPhone, otp);
+  } catch (err) {
     console.warn('SMS send failed:', err.message);
+  }
+  if (!sent) {
+    otpStore.delete(cleanPhone);
+    return res.status(502).json({ error: 'Could not send the verification SMS. Please try again in a moment.' });
+  }
+
+  res.json({
+    message: 'OTP sent',
+    phone: cleanPhone,
+    // Dev convenience with the console provider only: surface the code so
+    // local testing works without a real SMS gateway. Never in production.
+    debug: !isProd && !smsService.isRealProvider() ? otp : undefined
   });
-
-  res.json({ message: 'OTP sent', phone: cleanPhone, debug: process.env.NODE_ENV !== 'production' ? otp : undefined });
 });
-
-async function sendSMS(to, otp) {
-  const provider = (process.env.SMS_PROVIDER || '').toLowerCase();
-  if (provider === 'twilio') {
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const from = process.env.TWILIO_FROM_NUMBER;
-    if (!accountSid || !authToken || !from) {
-      throw new Error('Missing Twilio env vars');
-    }
-    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-    const params = new URLSearchParams();
-    params.append('To', to);
-    params.append('From', from);
-    params.append('Body', `Your Homify verification code is ${otp}`);
-    const base64 = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Authorization': `Basic ${base64}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params
-    });
-    if (!resp.ok) {
-      const body = await resp.text();
-      throw new Error(`Twilio error ${resp.status}: ${body}`);
-    }
-    return;
-  }
-
-  if (provider === 'africastalking') {
-    const username = process.env.AFRICASTALKING_USERNAME;
-    const apiKey = process.env.AFRICASTALKING_API_KEY;
-    const senderId = process.env.AFRICASTALKING_SENDER_ID || 'Homify';
-    if (!username || !apiKey) {
-      throw new Error('Missing Africa\'s Talking env vars');
-    }
-    const url = 'https://api.africastalking.com/restless/send';
-    const params = new URLSearchParams();
-    params.append('username', username);
-    params.append('to', to);
-    params.append('message', `Your Homify verification code is ${otp}`);
-    params.append('senderId', senderId);
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded', 'apiKey': apiKey },
-      body: params
-    });
-    const data = await resp.json();
-    if (data.SMSMessageData && data.SMSMessageData.Recipients && data.SMSMessageData.Recipients.length > 0) {
-      const rec = data.SMSMessageData.Recipients[0];
-      if (rec.status !== 'Success' && rec.statusCode !== 100) {
-        throw new Error(`AfricaTalking status ${rec.status}`);
-      }
-      return;
-    }
-    if (data.SMSMessageData && data.SMSMessageData.Message) {
-      return;
-    }
-    throw new Error(`AfricaTalking unexpected response: ${JSON.stringify(data)}`);
-  }
-
-  // Default dev fallback
-  console.log(`📱 OTP for ${to}: ${otp}`);
-}
 
 // POST /api/auth/phone/verify - Verify OTP and login/register
 router.post('/phone/verify', async (req, res) => {
@@ -400,7 +402,17 @@ router.post('/forgot-password', async (req, res) => {
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
   await db.prepare('INSERT INTO password_resets (id, userId, token, expiresAt) VALUES (?, ?, ?, ?)').run(uuidv4(), user.id, resetToken, expiresAt);
 
-  res.json({ message: 'If the email exists, a reset link has been sent', resetToken });
+  await emailService.sendPasswordResetEmail(email, resetToken);
+
+  const responseBody = { message: 'If the email exists, a reset link has been sent' };
+  // Dev only: expose the token so the automated test suite can exercise the
+  // reset flow without SMTP. Never returned in production, where it would
+  // allow taking over ANY account by requesting a reset for the victim's
+  // email address.
+  if (process.env.NODE_ENV !== 'production') {
+    responseBody.resetToken = resetToken;
+  }
+  res.json(responseBody);
 });
 
 // POST /api/auth/reset-password

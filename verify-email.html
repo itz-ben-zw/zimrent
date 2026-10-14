@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <title>Verify Your Email - Homify</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">Homi<span>fy</span></a>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="listings.html">Browse</a></li>
+            <li><a href="login.html">Sign In</a></li>
+        </ul>
+    </nav>
+    <main id="main">
+        <div class="container" style="max-width:450px; margin-top:3rem;">
+            <div class="form-card" style="text-align:center;">
+                <h2 style="margin-bottom:0.5rem;">Verify Your Email</h2>
+                <div id="verify-status" style="color:var(--text-muted); margin-bottom:1.5rem;">
+                    <i class="fas fa-spinner fa-spin" style="font-size:1.6rem;"></i>
+                    <p style="margin-top:0.8rem;">Confirming your email address...</p>
+                </div>
+                <div id="verify-actions" style="display:none;">
+                    <a href="login.html" class="btn btn-primary btn-lg" style="width:100%;">Continue to Sign In</a>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const statusEl = document.getElementById('verify-status');
+        const actionsEl = document.getElementById('verify-actions');
+        const token = new URLSearchParams(window.location.search).get('token');
+
+        function done(html) {
+            statusEl.innerHTML = html;
+            actionsEl.style.display = 'block';
+        }
+
+        if (!token) {
+            done('<i class="fas fa-exclamation-circle" style="font-size:1.6rem; color:var(--danger);"></i>'
+                + '<p style="margin-top:0.8rem;">This verification link is incomplete. '
+                + 'Please use the link from your email.</p>');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/auth/verify-email/' + encodeURIComponent(token), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{}'
+            });
+            const data = await res.json();
+            if (res.ok) {
+                done('<i class="fas fa-check-circle" style="font-size:1.6rem; color:#1e8449;"></i>'
+                    + '<p style="margin-top:0.8rem;">Your email is verified. You can now sign in and '
+                    + 'message landlords, save listings and manage your search.</p>');
+            } else {
+                done('<i class="fas fa-times-circle" style="font-size:1.6rem; color:var(--danger);"></i>'
+                    + '<p style="margin-top:0.8rem;">' + (data.error || 'This link is invalid or has expired.')
+                    + '</p><p style="color:var(--text-muted); font-size:0.85rem;">Sign in and request a new '
+                    + 'verification email from your profile if needed.</p>');
+            }
+        } catch (err) {
+            done('<i class="fas fa-wifi" style="font-size:1.6rem; color:var(--danger);"></i>'
+                + '<p style="margin-top:0.8rem;">Network error while verifying. Please check your '
+                + 'connection and try again with the same link.</p>');
+        }
+    });
+    </script>
+    <script src="js/analytics.js?v=1"></script>
+    <script src="js/cookie-consent.js?v=1"></script>
+</body>
+</html>
