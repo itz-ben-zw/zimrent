@@ -21,10 +21,14 @@ async function authenticate(req, res, next) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const db = getDb();
-    const user = await db.prepare('SELECT id, fullName, email, role, phone, profileImage, emailVerified FROM users WHERE id = ?').get(decoded.userId);
+    const user = await db.prepare('SELECT id, fullName, email, role, phone, profileImage, emailVerified, status FROM users WHERE id = ?').get(decoded.userId);
     
     if (!user) {
       return res.status(401).json({ error: 'User not found' });
+    }
+
+    if (user.status === 'suspended') {
+      return res.status(403).json({ error: 'Account suspended. Contact Homify support.' });
     }
     
     req.user = user;
@@ -50,8 +54,8 @@ async function optionalAuth(req, res, next) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const db = getDb();
-      const user = await db.prepare('SELECT id, fullName, email, role, phone, profileImage, emailVerified FROM users WHERE id = ?').get(decoded.userId);
-      if (user) {
+      const user = await db.prepare('SELECT id, fullName, email, role, phone, profileImage, emailVerified, status FROM users WHERE id = ?').get(decoded.userId);
+      if (user && user.status !== 'suspended') {
         req.user = user;
       }
     } catch (err) {
@@ -73,6 +77,26 @@ function authorize(...roles) {
   };
 }
 
+// Airbnb-style trust gate: browsing is open to everyone, but anything that
+// creates trust between strangers (posting, applying, messaging, reporting)
+// requires a verified email. The auth middleware already loads emailVerified
+// onto req.user, and admins are exempt so moderation never deadlocks.
+function requireVerifiedEmail(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  if (req.user.role === 'admin') {
+    return next();
+  }
+  if (!req.user.emailVerified) {
+    return res.status(403).json({
+      error: 'Please verify your email before doing that. Check your inbox for the verification link, or request a new one from your profile.',
+      code: 'EMAIL_NOT_VERIFIED'
+    });
+  }
+  next();
+}
+
 function csrfProtection(req, res, next) {
   const method = req.method.toLowerCase();
   if (['get', 'head', 'options'].includes(method)) {
@@ -89,4 +113,4 @@ function csrfProtection(req, res, next) {
   next();
 }
 
-module.exports = { authenticate, optionalAuth, authorize, csrfProtection };
+module.exports = { authenticate, optionalAuth, authorize, requireVerifiedEmail, csrfProtection };

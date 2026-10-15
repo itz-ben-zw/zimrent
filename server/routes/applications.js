@@ -1,12 +1,12 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { getDb } = require('../database/db');
-const { authenticate, authorize } = require('../middleware/auth');
+const { authenticate, authorize, requireVerifiedEmail } = require('../middleware/auth');
 
 const router = express.Router();
 
 // POST /api/applications - Apply for a property (tenant)
-router.post('/', authenticate, authorize('tenant'), async (req, res) => {
+router.post('/', authenticate, requireVerifiedEmail, authorize('tenant'), async (req, res) => {
   const { propertyId, message } = req.body;
 
   if (!propertyId) {

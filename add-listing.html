@@ -29,7 +29,7 @@
             <li><a href="#" id="nav-logout" style="display:none;" onclick="logout(); return false;">Logout</a></li>
             <li><span id="nav-user-info" style="display:none; font-weight:600; color:var(--primary); cursor:pointer;"></span></li>
         </ul>
-        <button class="menu-toggle" aria-label="Open navigation menu" aria-expanded="false"☰</button>
+        <button class="menu-toggle" aria-label="Open navigation menu" aria-expanded="false">Menu</button>
     </nav>
     <main id="main">
     <div class="container">
@@ -78,7 +78,7 @@
 
                 <div class="form-group">
                     <label for="inp-bedrooms">Room For *</label>
-                    <input type="number" id="inp-bedrooms" min="1" max="4" placeholder="Number of people it fits (1–4)" required>
+                    <input type="number" id="inp-bedrooms" min="1" max="4" placeholder="Number of people it fits (1-4)" required>
                 </div>
             </div>
 
@@ -203,9 +203,14 @@
                 </label>
             </div>
 
-            <!-- Submit -->
+            <!-- Verification notice + Submit -->
+            <div style="margin-top:1.5rem; padding:0.9rem 1rem; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; font-size:0.9rem; color:var(--text-muted);">
+                <i class="fas fa-shield-halved" style="color:var(--primary);"></i>
+                Your listing will be reviewed by the Homify team before students can see it.
+                Track its status (Pending review / Verified / Rejected) from your dashboard.
+            </div>
             <div class="btn-group" style="margin-top:1.5rem;">
-                <button type="submit" class="btn btn-success btn-lg" style="flex:1;">✓ Save Listing</button>
+                <button type="submit" class="btn btn-success btn-lg" style="flex:1;">Save Listing</button>
                 <button type="button" class="btn btn-outline btn-lg" onclick="window.location.href='dashboard.html';">Cancel</button>
             </div>
         </form>

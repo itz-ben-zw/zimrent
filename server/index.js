@@ -100,17 +100,22 @@ async function initializeApp() {
   
   const db = getDb();
   
-  // Auto-create admin only if ADMIN_EMAIL env var is set
-  const adminEmail = process.env.ADMIN_EMAIL;
+  // Admin account is chigodobenji@gmail.com. Defaults to that address when
+  // ADMIN_EMAIL is not set, and promotes the user if they already exist
+  // (e.g. signed up via Google before first boot) instead of skipping.
+  const adminEmail = String(process.env.ADMIN_EMAIL || 'chigodobenji@gmail.com').trim().toLowerCase();
   if (adminEmail) {
     try {
-      const existingAdmin = await db.prepare('SELECT id FROM users WHERE email = ?').get(adminEmail);
+      const existingAdmin = await db.prepare('SELECT id, role FROM users WHERE email = ?').get(adminEmail);
       if (!existingAdmin) {
         const passwordHash = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'admin123', 10);
         await db.prepare('INSERT INTO users (id, fullName, email, passwordHash, role, phone) VALUES (?, ?, ?, ?, ?, ?)').run(
           uuidv4(), 'Admin', adminEmail, passwordHash, 'admin', '+263 77 000 0000'
         );
-        console.log('✓ Admin created:', adminEmail);
+        console.log('[OK]  Admin created:', adminEmail);
+      } else if (existingAdmin.role !== 'admin') {
+        await db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(existingAdmin.id);
+        console.log('[OK]  Existing user promoted to admin:', adminEmail);
       }
     } catch (err) {
       console.warn('Skipped admin creation:', err.message);
@@ -132,14 +137,14 @@ async function initializeApp() {
       `DELETE FROM properties WHERE title IN (${placeholders}) AND email = ?`
     ).run(...demoTitles, demoLandlordEmail);
     if (removed.changes > 0) {
-      console.log(`✓ Removed ${removed.changes} legacy demo listing(s)`);
+      console.log(`[OK]  Removed ${removed.changes} legacy demo listing(s)`);
     }
     // Only remove the demo landlord account if it has no real listings left.
     const remaining = await db.prepare('SELECT COUNT(*)::int as count FROM properties WHERE email = ?').get(demoLandlordEmail);
     if (Number(remaining.count) === 0) {
       const deletedUser = await db.prepare('DELETE FROM users WHERE email = ?').run(demoLandlordEmail);
       if (deletedUser.changes > 0) {
-        console.log('✓ Removed legacy demo landlord account');
+        console.log('[OK]  Removed legacy demo landlord account');
       }
     }
   } catch (err) {

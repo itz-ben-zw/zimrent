@@ -32,7 +32,7 @@ async function runMigration() {
     }
   }
 
-  console.log('✓ Database migrated and verified');
+  console.log('[OK]  Database migrated and verified');
 }
 
 module.exports = runMigration;

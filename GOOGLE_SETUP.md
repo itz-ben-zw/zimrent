@@ -1,12 +1,12 @@
 # Google Sign-In Setup (Google Identity Services token flow)
 
 The site uses `google.accounts.oauth2.initTokenClient()` (see `js/auth.js`,
-`handleGoogleLogin()`). This flow checks **Authorized JavaScript origins** only —
+`handleGoogleLogin()`). This flow checks **Authorized JavaScript origins** only -
 redirect URIs are not used and do not need to be configured.
 
 ## Google Cloud Console steps
 
-1. Open [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services → Credentials**.
+1. Open [Google Cloud Console](https://console.cloud.google.com/) **APIs & Services Credentials**.
 2. Find the OAuth 2.0 Client ID for the **Web application** whose ID matches
    `GOOGLE_CLIENT_ID` in `js/auth.js`
    (`264173024062-...apps.googleusercontent.com`).
@@ -27,11 +27,11 @@ redirect URIs are not used and do not need to be configured.
 
 ## Troubleshooting
 
-- **`Error 400: origin_mismatch`** — the page's origin is not in the authorized
+- **`Error 400: origin_mismatch`** - the page's origin is not in the authorized
   list above. Expand "Request details" on the Google error screen and compare
   the `origin=` value character-for-character with what's configured
   (scheme, subdomain, port, no trailing slash).
-- **`Error 401: invalid_client`** — wrong or deleted client ID, or the client
+- **`Error 401: invalid_client`** - wrong or deleted client ID, or the client
   belongs to a different Google Cloud project.
 - Do not confuse this with redirect-URI errors: this flow never sends a
   redirect URI, so adding one has no effect here.

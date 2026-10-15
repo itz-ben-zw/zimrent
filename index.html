@@ -44,7 +44,7 @@
                 <li><a href="#" id="nav-logout" style="display:none;" onclick="logout(); return false;">Logout</a></li>
                 <li><span id="nav-user-info" style="display:none; font-weight:600; color:var(--primary); cursor:pointer;"></span></li>
             </ul>
-            <button class="menu-toggle" type="button" aria-label="Open navigation menu" aria-expanded="false">☰</button>
+            <button class="menu-toggle" type="button" aria-label="Open navigation menu" aria-expanded="false">Menu</button>
         </div>
     </nav>
     <main id="main">
@@ -54,7 +54,7 @@
          picks it up automatically, falling back to campus.jpg. -->
     <section class="hero" aria-labelledby="hero-heading">
         <div class="hero-inner">
-            <p class="hero-kicker">Student accommodation &middot; Bulawayo</p>
+            <p class="hero-kicker">Student accommodation - Bulawayo</p>
             <h1 id="hero-heading">Find your room near NUST</h1>
             <p class="hero-sub">Rooms and cottages in Selbourne Park, Riverside and Matsheumhlope. Contact landlords directly - Homify charges no fees.</p>
             <form class="search-box" role="search" aria-label="Search accommodation" onsubmit="return false;">
@@ -77,8 +77,8 @@
             <!-- Shown only when 10+ listings exist (see the inline script below).
                  Otherwise the trust points below carry the value props. -->
             <dl class="hero-stats" id="hero-stats" hidden>
-                <div><dt>Rooms listed</dt><dd id="stat-listings">&ndash;</dd></div>
-                <div><dt>Suburbs covered</dt><dd id="stat-suburbs">&ndash;</dd></div>
+                <div><dt>Rooms listed</dt><dd id="stat-listings">-</dd></div>
+                <div><dt>Suburbs covered</dt><dd id="stat-suburbs">-</dd></div>
             </dl>
             <ul class="hero-trust" id="hero-trust">
                 <li><i class="fas fa-badge-check" aria-hidden="true"></i> No fees, ever</li>
@@ -250,7 +250,7 @@
             </details>
             <details style="background:var(--surface); border:1px solid var(--border); border:1px solid var(--border); border-radius:10px; padding:1rem 1.2rem; margin-bottom:0.8rem;">
                 <summary style="font-weight:600; cursor:pointer;">Are the listings verified?</summary>
-                <p style="color:var(--text-muted); margin:0.8rem 0 0;">We don't verify listings ourselves. Always view a place in person before paying.</p>
+                <p style="color:var(--text-muted); margin:0.8rem 0 0;">Yes. Every listing is reviewed by the Homify team before it goes live, and verified listings show a badge. You can also report anything suspicious and we will hide the listing while we review it. Always still view a place in person before paying.</p>
             </details>
             <details style="background:var(--surface); border:1px solid var(--border); border:1px solid var(--border); border-radius:10px; padding:1rem 1.2rem; margin-bottom:0.8rem;">
                 <summary style="font-weight:600; cursor:pointer;">Can I list my own room?</summary>
@@ -402,6 +402,7 @@
                         <i class="fas fa-map-marker-alt" style="color:var(--text-muted);"></i> ${escapeHtml(l.city)}, ${escapeHtml(l.suburb)}
                     </div>
                     <div class="card-amenities">
+                        <span class="amenity-badge yes"><i class="fas fa-check-circle"></i> Verified</span>
                         ${l.solar ? '<span class="amenity-badge yes">Solar</span>' : ''}
                         ${l.borehole ? '<span class="amenity-badge yes">Borehole</span>' : ''}
                         ${l.wifi ? '<span class="amenity-badge yes">Wi-Fi</span>' : ''}

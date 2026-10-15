@@ -197,6 +197,11 @@ function resetFilters() {
   renderListings(currentListings);
 }
 
+function imgSrc(img) {
+  if (!img) return '';
+  return (typeof img === 'string') ? img : (img.data || '');
+}
+
 function renderListings(listings) {
   const grid = document.getElementById('listings-grid');
   const count = document.getElementById('listings-count');
@@ -221,7 +226,7 @@ function renderListings(listings) {
     <div class="property-card" role="button" tabindex="0" onclick="viewProperty('${l.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();viewProperty('${l.id}');}">
       <div class="card-img">
         ${l.images && l.images.length > 0 
-          ? `<img src="${l.images[0].data}" alt="${escapeHtml(l.title)}">` 
+          ? `<img src="${imgSrc(l.images[0])}" alt="${escapeHtml(l.title)}">` 
           : `<div class="card-img-placeholder"><i class="fas fa-home" style="font-size:3rem; color:#ccc;"></i></div>`
         }
       </div>
@@ -234,6 +239,7 @@ function renderListings(listings) {
           <i class="fas fa-map-marker-alt" style="color:var(--text-muted);"></i> ${escapeHtml(l.city)}, ${escapeHtml(l.suburb)}
       </div>
       <div class="card-amenities">
+          ${l.status === 'approved' ? '<span class="amenity-badge yes"><i class="fas fa-check-circle"></i> Verified</span>' : ''}
           ${l.solar ? '<span class="amenity-badge yes">Solar</span>' : ''}
           ${l.borehole ? '<span class="amenity-badge yes">Borehole</span>' : ''}
           ${l.wifi ? '<span class="amenity-badge yes">Wi-Fi</span>' : ''}

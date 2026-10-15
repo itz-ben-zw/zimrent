@@ -2,6 +2,11 @@
    HOMIFY - Landlord Dashboard & Add Listing
    ========================================== */
 
+function imgSrc(img) {
+  if (!img) return '';
+  return (typeof img === 'string') ? img : (img.data || '');
+}
+
 let editingId = null;
 
 function initDashboard() {
@@ -65,7 +70,7 @@ function renderListingsTable(listings) {
   if (listings.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" style="text-align:center; padding:2rem; color:var(--text-muted);">
+        <td colspan="8" style="text-align:center; padding:2rem; color:var(--text-muted);">
           <div style="font-size:2rem; margin-bottom:0.5rem;"><i class="fas fa-folder-open" style="color:var(--text-muted);"></i></div>
           No listings yet. Add your first property!
         </td>
@@ -73,13 +78,20 @@ function renderListingsTable(listings) {
     `;
     return;
   }
+
+  const statusPills = {
+    approved: { label: 'Verified', bg: '#e6f7ed', color: '#1d8a4f', border: '#a9e2c0' },
+    pending: { label: 'Pending review', bg: '#fff7e0', color: '#9a7400', border: '#f0d888' },
+    rejected: { label: 'Rejected', bg: '#fdecec', color: '#c0392b', border: '#f5b7b1' },
+    flagged: { label: 'Hidden (reported)', bg: '#fdecec', color: '#c0392b', border: '#f5b7b1' }
+  };
   
   tbody.innerHTML = listings.map(l => `
     <tr>
       <td>
         <div style="display:flex; align-items:center; gap:0.8rem;">
           ${l.images && l.images.length > 0 
-            ? `<img src="${l.images[0].data}" style="width:50px; height:50px; border-radius:6px; object-fit:cover;">`
+            ? `<img src="${imgSrc(l.images[0])}" style="width:50px; height:50px; border-radius:6px; object-fit:cover;">`
             : `<div style="width:50px; height:50px; background:#e0e0e0; border-radius:6px; display:flex; align-items:center; justify-content:center;"><i class="fas fa-home" style="color:#999;"></i></div>`
           }
           <div>
@@ -101,6 +113,14 @@ function renderListingsTable(listings) {
         ${l.solar ? '<span style="color:var(--accent);"><i class="fas fa-sun"></i></span>' : ''}
         ${l.borehole ? '<span style="color:var(--accent);"><i class="fas fa-tint"></i></span>' : ''}
         ${l.fenced ? '<span style="color:var(--accent);"><i class="fas fa-lock"></i></span>' : ''}
+      </td>
+      <td>
+        ${(() => {
+          const pill = statusPills[l.status] || statusPills.approved;
+          return `<span style="display:inline-block; padding:0.2rem 0.6rem; border-radius:999px; font-size:0.78rem; font-weight:600; background:${pill.bg}; color:${pill.color}; border:1px solid ${pill.border}; white-space:nowrap;">${pill.label}</span>`
+            + (l.status === 'rejected' && l.rejectReason
+              ? `<div style="font-size:0.75rem; color:var(--danger); margin-top:0.3rem; max-width:160px;">${escapeHtml(l.rejectReason)}</div>` : '');
+        })()}
       </td>
       <td>${new Date(l.createdAt).toLocaleDateString('en-ZW', { month: 'short', day: 'numeric' })}</td>
       <td>
@@ -124,7 +144,7 @@ async function handleListingSubmit(e) {
   const url = editingId ? `/api/properties/${editingId}` : '/api/properties';
   const method = editingId ? 'PUT' : 'POST';
   
-  const images = (window._tempImages || []).map(img => ({ data: img.data }));
+  const images = (window._tempImages || []).map(img => imgSrc(img)).filter(Boolean);
   
   const body = {
     title: document.getElementById('inp-title').value,
@@ -166,7 +186,7 @@ async function handleListingSubmit(e) {
     btn.disabled = true;
     btn.textContent = 'Saved';
 
-    if (window.toast) toast.success('Your listing has been submitted.');
+    if (window.toast) toast.success('Listing submitted - awaiting verification.');
 
     setTimeout(() => {
       window.location.href = 'thank-you.html';
@@ -402,7 +422,7 @@ function renderUploadPreview() {
   const images = window._tempImages || [];
   container.innerHTML = images.map((img, i) => `
     <div class="upload-thumb">
-      <img src="${img.data}" alt="Preview ${i+1}">
+      <img src="${imgSrc(img)}" alt="Preview ${i+1}">
       <button type="button" class="remove-img" onclick="removeImage(${i})" aria-label="Remove image ${i+1}">×</button>
     </div>
   `).join('');

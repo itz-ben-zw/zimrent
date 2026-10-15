@@ -43,14 +43,27 @@ function userResponse(user) {
 // POST /api/auth/register
 router.post('/register', upload.single('profileImage'), async (req, res) => {
   const { fullName, email, password, role, phone, username } = req.body;
+
+  const cleanName = String(fullName || '').trim().replace(/\s+/g, ' ');
+  if (cleanName.length < 2) {
+    return res.status(400).json({ error: 'Please enter your real full name' });
+  }
+  // Normalize so You@Gmail.com and you@gmail.com cannot become two accounts.
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  // Phone is optional, but if given it must look like a real number so
+  // listings cannot carry garbage contact details.
+  const cleanPhone = phone ? String(phone).trim().replace(/[\s\-().]/g, '') : '';
+  if (cleanPhone && !/^\+?\d{7,15}$/.test(cleanPhone)) {
+    return res.status(400).json({ error: 'Phone number looks invalid. Use digits with optional leading +, e.g. +263 71 234 5678' });
+  }
   const profileImage = req.file ? `/uploads/${req.file.filename}` : (req.body.profileImage || '');
 
   // Validation
   if (!fullName || !email || !password) {
     return res.status(400).json({ error: 'Full name, email, and password are required' });
   }
-  if (password.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ error: 'Invalid email format' });
@@ -63,8 +76,11 @@ router.post('/register', upload.single('profileImage'), async (req, res) => {
   const db = getDb();
 
   // Check email uniqueness
-  const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  const existing = await db.prepare('SELECT id, status FROM users WHERE email = ?').get(cleanEmail);
   if (existing) {
+    if (existing.status === 'suspended') {
+      return res.status(403).json({ error: 'This account has been suspended. Contact homify.online@gmail.com for help.' });
+    }
     return res.status(409).json({ error: 'An account with this email already exists' });
   }
 
@@ -82,11 +98,11 @@ router.post('/register', upload.single('profileImage'), async (req, res) => {
   const id = uuidv4();
   const user = {
     id,
-    fullName,
-    email,
+    fullName: cleanName,
+    email: cleanEmail,
     passwordHash,
     role: role || 'tenant',
-    phone: phone || '',
+    phone: cleanPhone || '',
     username: username || null,
     profileImage,
     authProvider: 'email',
@@ -140,14 +156,20 @@ router.post('/login', async (req, res) => {
   }
 
   const db = getDb();
-  const user = await db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  const cleanLoginEmail = String(email || '').trim().toLowerCase();
+  const user = await db.prepare('SELECT * FROM users WHERE email = ?').get(cleanLoginEmail);
 
-  if (!user) {
-    return res.status(401).json({ error: 'No account found with this email' });
+  if (!user || !user.passwordHash) {
+    bcrypt.compareSync(password, '$2a$10$invalidinvalidinvalidinvalidinvalidinvalid12');
+    return res.status(401).json({ error: 'Invalid email or password' });
+  }
+
+  if (user.status === 'suspended') {
+    return res.status(403).json({ error: 'This account has been suspended. Contact homify.online@gmail.com for help.' });
   }
 
   if (!bcrypt.compareSync(password, user.passwordHash)) {
-    return res.status(401).json({ error: 'Incorrect password' });
+    return res.status(401).json({ error: 'Invalid email or password' });
   }
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
@@ -161,6 +183,9 @@ router.post('/login', async (req, res) => {
 // the server verifies it with Google and trusts ONLY that result. Accepting
 // email/googleId posted by the browser would let anyone sign in as any user.
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '264173024062-vci0i2i5i75524gu8cnfpf79l48i241q.apps.googleusercontent.com';
+// Reserved admin address - Google sign-in as this email always resolves to
+// the admin account and never downgrades it to tenant.
+const ADMIN_EMAIL_RESERVED = String(process.env.ADMIN_EMAIL || 'chigodobenji@gmail.com').trim().toLowerCase();
 
 router.post('/google', async (req, res) => {
   const { accessToken } = req.body;
@@ -371,8 +396,8 @@ router.put('/profile', authenticate, upload.single('profileImage'), async (req, 
   res.json({ user: userResponse(updated) });
 });
 
-// POST /api/auth/verify-email/:token
-router.post('/verify-email/:token', async (req, res) => {
+// POST /api/auth/verify-email/:token// Shared handler so both the API client and a plain email link work.
+async function verifyEmailToken(req, res) {
   const token = req.params.token;
   const db = getDb();
   const row = await db.prepare('SELECT * FROM email_verifications WHERE token = ? AND verified = 0 AND expiresAt::timestamptz > CURRENT_TIMESTAMP').get(token);
@@ -382,6 +407,33 @@ router.post('/verify-email/:token', async (req, res) => {
   await db.prepare('UPDATE users SET emailVerified = 1, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(row.userId);
   await db.prepare('UPDATE email_verifications SET verified = 1 WHERE id = ?').run(row.id);
   res.json({ message: 'Email verified successfully' });
+}
+router.post('/verify-email/:token', verifyEmailToken);
+router.get('/verify-email/:token', verifyEmailToken);
+
+// POST /api/auth/resend-verification - send a fresh verification link.
+// Authenticated: user requests a new link from their profile/dashboard.
+router.post('/resend-verification', authenticate, async (req, res) => {
+  const db = getDb();
+  const user = await db.prepare('SELECT id, fullName, email, emailVerified FROM users WHERE id = ?').get(req.user.id);
+  if (!user) {
+    return res.status(404).json({ error: 'Account not found' });
+  }
+  if (user.emailVerified) {
+    return res.json({ message: 'Your email is already verified', emailVerified: true });
+  }
+  const verifyToken = uuidv4();
+  const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  await db.prepare('INSERT INTO email_verifications (id, userId, token, expiresAt) VALUES (?, ?, ?, ?)').run(
+    uuidv4(), user.id, verifyToken, verifyExpires
+  );
+  const sent = await emailService.sendVerificationEmail(user.email, user.fullName, verifyToken);
+  if (!sent) {
+    return res.status(503).json({
+      error: 'Verification emails are not available right now. Please sign in with Google instead, or try again later.'
+    });
+  }
+  res.json({ message: 'Verification link sent. Please check your inbox.', emailVerificationSent: true });
 });
 
 // POST /api/auth/forgot-password

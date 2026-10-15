@@ -1,7 +1,7 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { getDb } = require('../database/db');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, requireVerifiedEmail } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -46,7 +46,7 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // POST /api/conversations - Start or get conversation for a property
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, requireVerifiedEmail, async (req, res) => {
   const { propertyId, message } = req.body;
   const db = getDb();
   const user = req.user;
@@ -121,7 +121,7 @@ router.get('/:id/messages', authenticate, async (req, res) => {
 });
 
 // POST /api/conversations/:id/messages - Send message
-router.post('/:id/messages', authenticate, async (req, res) => {
+router.post('/:id/messages', authenticate, requireVerifiedEmail, async (req, res) => {
   const { text } = req.body;
   const db = getDb();
   const user = req.user;

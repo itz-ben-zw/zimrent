@@ -75,7 +75,7 @@ async function sendSMS(to, otp) {
   }
 
   // Console/dev fallback: log only, nothing leaves the server.
-  console.log(`📱 OTP for ${to}: ${otp}`);
+  console.log(`OTP for ${to}: ${otp}`);
   return true;
 }
 

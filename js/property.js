@@ -2,6 +2,11 @@
    HOMIFY - Property Detail Page
    ========================================== */
 
+function imgSrc(img) {
+  if (!img) return '';
+  return (typeof img === 'string') ? img : (img.data || '');
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   const listingId = sessionStorage.getItem('current_listing_id');
   if (!listingId) {
@@ -20,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const p = data.property;
 
     document.getElementById('breadcrumb-title').textContent = p.title;
-    document.getElementById('detail-title').textContent = p.title;
+    document.getElementById('detail-title').innerHTML = escapeHtml(p.title) + (p.status === 'approved' ? ' <span class="amenity-badge yes" style="vertical-align:middle; margin-left:0.4rem;"><i class="fas fa-check-circle"></i> Verified by Homify</span>' : '');
     document.getElementById('detail-location').innerHTML = '<i class="fas fa-map-marker-alt" style="color:var(--text-muted);"></i> ' + escapeHtml(p.city) + ', ' + escapeHtml(p.suburb);
     document.getElementById('detail-price').innerHTML = '<span style="font-weight:700; color:var(--primary); font-size:1.3rem;">' + p.currency + ' ' + p.price.toLocaleString() + '</span><span style="color:var(--text-muted);">/month</span>';
     document.getElementById('detail-description').textContent = p.description || 'No description provided.';
@@ -50,6 +55,63 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('detail-date').textContent = 'Listed on ' + new Date(p.createdAt).toLocaleDateString('en-ZW', { year: 'numeric', month: 'long', day: 'numeric' });
     }
 
+    // Status banner: only the landlord and admins ever see non-approved listings.
+    const banner = document.getElementById('status-banner');
+    if (banner && p.status && p.status !== 'approved') {
+      banner.style.display = 'block';
+      const reasons = {
+        pending: 'This listing is waiting for Homify verification. Only you and the Homify team can see it.',
+        rejected: 'This listing was rejected during verification' + (p.rejectReason ? ': ' + p.rejectReason : '') + '. Edit and re-submit it from your dashboard.',
+        flagged: 'This listing is hidden while a report about it is being reviewed.'
+      };
+      banner.textContent = reasons[p.status] || '';
+    }
+
+    // Report form (US08: scam reports flag the listing instantly)
+    const reportBtn = document.getElementById('report-submit');
+    if (reportBtn) {
+      reportBtn.addEventListener('click', async () => {
+        const statusEl = document.getElementById('report-status');
+        const reasonInput = document.getElementById('report-reason');
+        const reason = reasonInput ? reasonInput.value.trim() : '';
+        if (!reason) {
+          statusEl.textContent = 'Please give a reason.';
+          statusEl.style.color = '#e05252';
+          return;
+        }
+        reportBtn.disabled = true;
+        try {
+          const h = { 'Content-Type': 'application/json' };
+          const s = getSession ? getSession() : null;
+          if (s && s.token) h['Authorization'] = 'Bearer ' + s.token;
+          const r = await fetch('/api/properties/' + encodeURIComponent(listingId) + '/report', {
+            method: 'POST',
+            headers: h,
+            body: JSON.stringify({
+              reason,
+              evidence: document.getElementById('report-evidence').value.trim()
+            })
+          });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            statusEl.textContent = (r.status === 401)
+              ? 'Please sign in to report a listing.'
+              : (d.error || 'Failed to send report.');
+            statusEl.style.color = '#e05252';
+            reportBtn.disabled = false;
+            return;
+          }
+          statusEl.textContent = d.message || 'Report sent.';
+          statusEl.style.color = '#2e9e5b';
+          if (window.toast) toast.success('Report submitted. Thank you.');
+        } catch (e) {
+          statusEl.textContent = 'Network error, please try again.';
+          statusEl.style.color = '#e05252';
+          reportBtn.disabled = false;
+        }
+      });
+    }
+
     // Custom additions
     if (p.customAdditions) {
       document.getElementById('detail-custom-section').style.display = 'block';
@@ -63,9 +125,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const hero = document.getElementById('detail-hero');
     const thumbs = document.getElementById('thumbnail-container');
     if (p.images && p.images.length > 0) {
-      hero.innerHTML = '<img src="' + p.images[0].data + '" alt="' + escapeHtml(p.title) + '">';
+      hero.innerHTML = '<img src="' + imgSrc(p.images[0]) + '" alt="' + escapeHtml(p.title) + '">';
       thumbs.innerHTML = p.images.map((img, i) => `
-        <img src="${img.data}" alt="Image ${i+1}" style="width:90px; height:65px; object-fit:cover; border-radius:6px; cursor:pointer; border:2px solid ${i===0?'var(--primary)':'transparent'};" onclick="document.getElementById('detail-hero').querySelector('img').src='${img.data}'; this.parentElement.querySelectorAll('img').forEach(el=>el.style.borderColor='transparent'); this.style.borderColor='var(--primary)';">
+        <img src="${imgSrc(img)}" alt="Image ${i+1}" style="width:90px; height:65px; object-fit:cover; border-radius:6px; cursor:pointer; border:2px solid ${i===0?'var(--primary)':'transparent'};" onclick="document.getElementById('detail-hero').querySelector('img').src='${img.data}'; this.parentElement.querySelectorAll('img').forEach(el=>el.style.borderColor='transparent'); this.style.borderColor='var(--primary)';">
       `).join('');
     } else {
       hero.innerHTML = '<div class="detail-hero-placeholder"><i class="fas fa-home" style="font-size:5rem; color:#ccc;"></i></div>';

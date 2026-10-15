@@ -42,7 +42,7 @@
             <li><a href="#" id="nav-logout" style="display:none;" onclick="logout(); return false;">Logout</a></li>
             <li><span id="nav-user-info" style="display:none; font-weight:600; color:var(--primary); cursor:pointer;"></span></li>
         </ul>
-        <button class="menu-toggle" aria-label="Open navigation menu" aria-expanded="false"☰</button>
+        <button class="menu-toggle" aria-label="Open navigation menu" aria-expanded="false">Menu</button>
     </nav>
     <main id="main">
     <div class="container">
@@ -67,6 +67,7 @@
 
                 <!-- Title -->
                 <h1 class="detail-title" id="detail-title">Property Title</h1>
+                <div id="status-banner" style="display:none; margin:0.6rem 0; padding:0.8rem 1rem; border-radius:8px; background:#fff7e6; border:1px solid #f5d78e; color:#8a6d00; font-size:0.92rem;"></div>
                 <div class="detail-location" id="detail-location">City, Suburb</div>
 
                 <!-- Price -->
@@ -88,6 +89,18 @@
                 <div style="margin-top:2rem;">
                     <h2 style="margin-bottom:0.8rem;">About This Property</h2>
                     <p id="detail-description" style="line-height:1.8; color:var(--text-dark);"></p>
+                </div>
+
+                <!-- Report Listing -->
+                <div id="report-section" style="margin-top:2rem; padding:1.2rem; background:var(--surface-2); border-radius:8px; border-left:4px solid #e05252;">
+                    <h3 style="margin-bottom:0.4rem; color:var(--text);"><i class="fas fa-flag" style="color:#e05252;"></i> Report this listing</h3>
+                    <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:0.8rem;">Spotted a scam or inaccurate info? We will hide the listing while the Homify team reviews it.</p>
+                    <input id="report-reason" type="text" placeholder="Reason (required)" style="width:100%; padding:0.6rem 0.8rem; border:1px solid var(--border); border-radius:8px; margin-bottom:0.6rem; background:var(--surface); color:var(--text);">
+                    <textarea id="report-evidence" rows="2" placeholder="Evidence or details (optional)" style="width:100%; padding:0.6rem 0.8rem; border:1px solid var(--border); border-radius:8px; margin-bottom:0.6rem; background:var(--surface); color:var(--text); resize:vertical;"></textarea>
+                    <div>
+                        <button id="report-submit" type="button" class="btn btn-sm" style="background:#e05252; color:#fff; padding:0.5rem 1rem;">Submit Report</button>
+                        <span id="report-status" style="margin-left:0.6rem; font-size:0.88rem; color:var(--text-muted);"></span>
+                    </div>
                 </div>
 
                 <!-- Custom Additions -->
@@ -118,7 +131,7 @@
 
                 <!-- Back Button -->
                 <div style="margin-top:2rem;">
-                    <a href="listings.html" class="btn btn-outline" style="width:100%;">← Back to Listings</a>
+                    <a href="listings.html" class="btn btn-outline" style="width:100%;">Back to Listings</a>
                 </div>
             </aside>
         </div>

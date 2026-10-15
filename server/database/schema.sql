@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT NOT NULL UNIQUE,
   passwordHash TEXT NOT NULL,
   role TEXT NOT NULL CHECK(role IN ('tenant', 'landlord', 'admin')) DEFAULT 'tenant',
+  status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'suspended')),
   phone TEXT DEFAULT '',
   username TEXT UNIQUE,
   profileImage TEXT DEFAULT '',
@@ -16,6 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
   createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'suspended'));
 
 CREATE TABLE IF NOT EXISTS properties (
   id TEXT PRIMARY KEY,
@@ -55,6 +57,24 @@ ALTER TABLE properties ADD COLUMN IF NOT EXISTS gasStove INTEGER NOT NULL DEFAUL
 ALTER TABLE properties ADD COLUMN IF NOT EXISTS fridge INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE properties ADD COLUMN IF NOT EXISTS latitude REAL DEFAULT NULL;
 ALTER TABLE properties ADD COLUMN IF NOT EXISTS longitude REAL DEFAULT NULL;
+
+-- Verification workflow (listing moderation)
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'approved';
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS verifiedAt TEXT DEFAULT NULL;
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS rejectReason TEXT DEFAULT '';
+
+-- Scam / inaccurate listing reports
+CREATE TABLE IF NOT EXISTS reports (
+  id TEXT PRIMARY KEY,
+  propertyId TEXT NOT NULL,
+  reporterId TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  evidence TEXT DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open', 'resolved')),
+  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (propertyId) REFERENCES properties(id) ON DELETE CASCADE,
+  FOREIGN KEY (reporterId) REFERENCES users(id) ON DELETE CASCADE
+);
 
 CREATE TABLE IF NOT EXISTS applications (
   id TEXT PRIMARY KEY,
@@ -117,6 +137,8 @@ CREATE INDEX IF NOT EXISTS idx_applications_property ON applications(propertyId)
 CREATE INDEX IF NOT EXISTS idx_applications_tenant ON applications(tenantId);
 CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(userId);
 CREATE INDEX IF NOT EXISTS idx_conversations_property ON conversations(propertyId);
+CREATE INDEX IF NOT EXISTS idx_reports_property ON reports(propertyId);
+CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
 CREATE INDEX IF NOT EXISTS idx_conversations_landlord ON conversations(landlordId);
 CREATE INDEX IF NOT EXISTS idx_conversations_tenant ON conversations(tenantId);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversationId);

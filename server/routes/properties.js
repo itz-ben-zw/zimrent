@@ -1,7 +1,7 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { getDb } = require('../database/db');
-const { authenticate, optionalAuth, authorize } = require('../middleware/auth');
+const { authenticate, optionalAuth, authorize, requireVerifiedEmail } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
 const router = express.Router();
@@ -11,7 +11,7 @@ router.get('/', optionalAuth, async (req, res) => {
   const db = getDb();
   let query = 'SELECT * FROM properties WHERE 1=1';
   const params = [];
-  const countQuery = 'SELECT COUNT(*)::int as total FROM properties WHERE 1=1';
+  let countQuery = 'SELECT COUNT(*)::int as total FROM properties WHERE 1=1';
   const countParams = [];
 
   if (req.query.city) {
@@ -75,6 +75,21 @@ router.get('/', optionalAuth, async (req, res) => {
     countParams.push(req.query.landlordId);
   }
 
+  // Verification visibility: the public only ever sees approved listings.
+  // A landlord viewing their own portfolio (or an admin) sees every status.
+  const viewingOwn = req.user && req.query.landlordId && req.query.landlordId === req.user.id;
+  const showAll = req.user && (req.user.role === 'admin' || viewingOwn);
+  if (!showAll) {
+    query += " AND status = 'approved'";
+    countQuery += " AND status = 'approved'";
+  }
+  if (req.query.status) {
+    query += ' AND status = ?';
+    countQuery += ' AND status = ?';
+    params.push(req.query.status);
+    countParams.push(req.query.status);
+  }
+
   query += ' ORDER BY createdAt DESC';
 
   const totalRow = await db.prepare(countQuery).get(...countParams);
@@ -118,6 +133,15 @@ router.get('/:id', optionalAuth, async (req, res) => {
     return res.status(404).json({ error: 'Property not found' });
   }
 
+  // Non-approved listings are only visible to their landlord and admins.
+  if (property.status !== 'approved') {
+    const isOwner = req.user && req.user.id === property.landlordId;
+    const isAdmin = req.user && req.user.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+  }
+
   const landlord = await db.prepare('SELECT id, fullName, email, phone, profileImage FROM users WHERE id = ?').get(property.landlordId);
 
   // Check if user has favorited
@@ -145,7 +169,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
 });
 
 // POST /api/properties - Create property (landlord/admin)
-router.post('/', authenticate, authorize('landlord', 'admin'), upload.array('images', 10), async (req, res) => {
+router.post('/', authenticate, requireVerifiedEmail, authorize('landlord', 'admin'), upload.array('images', 10), async (req, res) => {
   const { title, description, city, suburb, type, bedrooms, bathrooms, price, currency, wifi, electricStove, gasStove, fridge, solar, borehole, fenced, customAdditions, phone, email, whatsapp, latitude, longitude } = req.body;
 
   if (!title || !city || !suburb || !type || !price) {
@@ -179,24 +203,26 @@ router.post('/', authenticate, authorize('landlord', 'admin'), upload.array('ima
     email: email || '',
     whatsapp: whatsapp || '',
     latitude: latitude !== undefined && latitude !== null && latitude !== '' ? parseFloat(latitude) : null,
-    longitude: longitude !== undefined && longitude !== null && longitude !== '' ? parseFloat(longitude) : null
+    longitude: longitude !== undefined && longitude !== null && longitude !== '' ? parseFloat(longitude) : null,
+    status: 'pending'   // hidden from students until an admin verifies it
   };
 
   const db = getDb();
-  await db.prepare(`INSERT INTO properties (id, landlordId, title, description, city, suburb, type, bedrooms, bathrooms, price, currency, wifi, electricStove, gasStove, fridge, solar, borehole, fenced, customAdditions, images, phone, email, whatsapp, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+  await db.prepare(`INSERT INTO properties (id, landlordId, title, description, city, suburb, type, bedrooms, bathrooms, price, currency, wifi, electricStove, gasStove, fridge, solar, borehole, fenced, customAdditions, images, phone, email, whatsapp, latitude, longitude, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
     property.id, property.landlordId, property.title, property.description, property.city, property.suburb, property.type,
     property.bedrooms, property.bathrooms, property.price, property.currency,
     property.wifi, property.electricStove, property.gasStove, property.fridge,
     property.solar, property.borehole, property.fenced,
     property.customAdditions, property.images, property.phone, property.email, property.whatsapp,
-    property.latitude, property.longitude
+    property.latitude, property.longitude, property.status
   );
 
   res.status(201).json({
     property: {
       ...property,
       images: JSON.parse(property.images)
-    }
+    },
+    message: 'Listing submitted for verification. It will appear publicly once an admin approves it.'
   });
 });
 
@@ -215,7 +241,11 @@ router.put('/:id', authenticate, async (req, res) => {
 
   const { title, description, city, suburb, type, bedrooms, bathrooms, price, currency, wifi, electricStove, gasStove, fridge, solar, borehole, fenced, customAdditions, phone, email, whatsapp, latitude, longitude } = req.body;
 
-  await db.prepare(`UPDATE properties SET title = ?, description = ?, city = ?, suburb = ?, type = ?, bedrooms = ?, bathrooms = ?, price = ?, currency = ?, wifi = ?, electricStove = ?, gasStove = ?, fridge = ?, solar = ?, borehole = ?, fenced = ?, customAdditions = ?, phone = ?, email = ?, whatsapp = ?, latitude = ?, longitude = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`).run(
+  // Editing a rejected listing re-submits it for verification.
+  const newStatus = existing.status === 'rejected' ? 'pending' : existing.status;
+  const newRejectReason = existing.status === 'rejected' ? '' : existing.rejectReason;
+
+  await db.prepare(`UPDATE properties SET title = ?, description = ?, city = ?, suburb = ?, type = ?, bedrooms = ?, bathrooms = ?, price = ?, currency = ?, wifi = ?, electricStove = ?, gasStove = ?, fridge = ?, solar = ?, borehole = ?, fenced = ?, customAdditions = ?, phone = ?, email = ?, whatsapp = ?, latitude = ?, longitude = ?, status = ?, rejectReason = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`).run(
     title || existing.title,
     description !== undefined ? description : existing.description,
     city || existing.city,
@@ -238,6 +268,8 @@ router.put('/:id', authenticate, async (req, res) => {
     whatsapp !== undefined ? whatsapp : existing.whatsapp,
     latitude !== undefined && latitude !== null && latitude !== '' ? parseFloat(latitude) : existing.latitude,
     longitude !== undefined && longitude !== null && longitude !== '' ? parseFloat(longitude) : existing.longitude,
+    newStatus,
+    newRejectReason,
     req.params.id
   );
 
@@ -272,6 +304,60 @@ router.delete('/:id', authenticate, async (req, res) => {
 
   await db.prepare('DELETE FROM properties WHERE id = ?').run(req.params.id);
   res.json({ message: 'Property deleted successfully' });
+});
+
+// POST /api/properties/:id/report - Flag a listing as a suspected scam
+router.post('/:id/report', authenticate, requireVerifiedEmail, async (req, res) => {
+  const db = getDb();
+  const { reason, evidence } = req.body;
+
+  if (!reason || !reason.trim()) {
+    return res.status(400).json({ error: 'A reason is required' });
+  }
+
+  const property = await db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
+  if (!property) {
+    return res.status(404).json({ error: 'Property not found' });
+  }
+  if (property.landlordId === req.user.id) {
+    return res.status(400).json({ error: 'You cannot report your own listing' });
+  }
+
+  const prior = await db.prepare(
+    'SELECT id FROM reports WHERE propertyId = ? AND reporterId = ? AND status = ?'
+  ).get(req.params.id, req.user.id, 'open');
+  if (prior) {
+    return res.status(409).json({ error: 'You have already reported this listing. The Homify team is reviewing it.' });
+  }
+
+  await db.prepare(
+    'INSERT INTO reports (id, propertyId, reporterId, reason, evidence, status) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(uuidv4(), property.id, req.user.id, reason.trim(), (evidence || '').trim(), 'open');
+
+  // Count every open report, including this one. Hide the listing immediately
+  // and auto-remove after 3 independent reports so one report alone cannot
+  // permanently take down a listing, but a pattern does.
+  const openCount = await db.prepare(
+    "SELECT COUNT(*)::int AS count FROM reports WHERE propertyId = ? AND status = 'open'"
+  ).get(property.id);
+  const count = (openCount && openCount.count) || 1;
+
+  if (property.status === 'approved') {
+    await db.prepare(
+      "UPDATE properties SET status = 'flagged', rejectReason = 'Under review following a user report', updatedAt = CURRENT_TIMESTAMP WHERE id = ?"
+    ).run(property.id);
+  }
+  if (count >= 3 && property.status !== 'rejected') {
+    await db.prepare(
+      "UPDATE properties SET status = 'rejected', rejectReason = 'Removed after multiple scam reports', updatedAt = CURRENT_TIMESTAMP WHERE id = ?"
+    ).run(property.id);
+  }
+
+  res.status(201).json({
+    message: count >= 3
+      ? 'Report received. Multiple reports were filed, so the listing has been removed pending review.'
+      : 'Report received. The listing has been hidden while the Homify team reviews it.'
+  });
 });
 
 // POST /api/properties/:id/images - Upload images to existing property

@@ -88,7 +88,8 @@ function initLoginPage() {
   });
 
   if (isLoggedIn()) {
-    window.location.href = 'dashboard.html';
+    const _u = getCurrentUser();
+    window.location.href = (_u && _u.role === 'admin') ? 'admin.html' : 'dashboard.html';
   }
 }
 
@@ -114,7 +115,9 @@ async function handleLogin(e) {
     }
 
     loginUser(data);
-    if (data.user.role === 'tenant') {
+    if (data.user.role === 'admin') {
+      window.location.href = 'admin.html';
+    } else if (data.user.role === 'tenant') {
       window.location.href = 'tenant-dashboard.html';
     } else {
       window.location.href = 'dashboard.html';
@@ -189,7 +192,9 @@ async function verifyOTP() {
     }
 
     loginUser(data);
-    if (data.user.role === 'tenant') {
+    if (data.user.role === 'admin') {
+      window.location.href = 'admin.html';
+    } else if (data.user.role === 'tenant') {
       window.location.href = 'tenant-dashboard.html';
     } else {
       window.location.href = 'dashboard.html';
@@ -256,7 +261,9 @@ function handleGoogleLogin() {
           return;
         }
         loginUser(data);
-        if (data.user.role === 'tenant') {
+        if (data.user.role === 'admin') {
+          window.location.href = 'admin.html';
+        } else if (data.user.role === 'tenant') {
           window.location.href = 'tenant-dashboard.html';
         } else {
           window.location.href = 'dashboard.html';
@@ -296,7 +303,8 @@ function initRegisterPage() {
   }
 
   if (isLoggedIn()) {
-    window.location.href = 'dashboard.html';
+    const _u = getCurrentUser();
+    window.location.href = (_u && _u.role === 'admin') ? 'admin.html' : 'dashboard.html';
   }
 }
 
@@ -363,7 +371,7 @@ async function handleRegister(e) {
     }
 
     loginUser(data);
-    const dest = data.user.role === 'tenant' ? 'tenant-dashboard.html' : 'dashboard.html';
+    const dest = data.user.role === 'admin' ? 'admin.html' : data.user.role === 'tenant' ? 'tenant-dashboard.html' : 'dashboard.html';
     // Registration is only half the story: tell the user honestly whether a
     // verification email actually went out instead of silently redirecting.
     const successEl = document.getElementById('auth-success');
@@ -450,6 +458,21 @@ function updateNavbar() {
       userInfo.style.display = 'none';
       userInfo.onclick = null;
     }
+  }
+
+  // Admin console link: created once, then shown only to admins.
+  let adminItem = document.getElementById('nav-admin-item');
+  if (!adminItem && loginLink && loginLink.parentElement && loginLink.parentElement.parentElement) {
+    adminItem = document.createElement('li');
+    adminItem.id = 'nav-admin-item';
+    const adminA = document.createElement('a');
+    adminA.href = 'admin.html';
+    adminA.textContent = 'Admin';
+    adminItem.appendChild(adminA);
+    loginLink.parentElement.parentElement.insertBefore(adminItem, loginLink.parentElement);
+  }
+  if (adminItem) {
+    adminItem.style.display = (user && user.role === 'admin') ? 'inline-block' : 'none';
   }
 }
 
