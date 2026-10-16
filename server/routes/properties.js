@@ -183,6 +183,9 @@ router.post('/', authenticate, requireVerifiedEmail, authorize('landlord', 'admi
       images = await storeImages(req.files, 'homify/properties');
     } catch (err) {
       console.error('Image upload failed:', err);
+      if (err && err.message && err.message.includes('Image storage is not configured')) {
+        return res.status(503).json({ error: 'Image uploads are temporarily unavailable (storage not configured). Please try again later.' });
+      }
       return res.status(500).json({ error: 'Image upload failed. Please try again.' });
     }
   }
@@ -387,6 +390,9 @@ router.post('/:id/images', authenticate, authorize('landlord', 'admin'), memoryU
       newImages = await storeImages(req.files, 'homify/properties');
     } catch (err) {
       console.error('Image upload failed:', err);
+      if (err && err.message && err.message.includes('Image storage is not configured')) {
+        return res.status(503).json({ error: 'Image uploads are temporarily unavailable (storage not configured). Please try again later.' });
+      }
       return res.status(500).json({ error: 'Image upload failed. Please try again.' });
     }
   }

@@ -63,6 +63,9 @@ router.post('/register', memoryUpload.single('profileImage'), async (req, res) =
       profileImage = await storeImage(req.file, 'homify/profile');
     } catch (err) {
       console.error('Image upload failed:', err);
+      if (err && err.message && err.message.includes('Image storage is not configured')) {
+        return res.status(503).json({ error: 'Image uploads are temporarily unavailable (storage not configured). Please try again later.' });
+      }
       return res.status(500).json({ error: 'Profile image upload failed. Please try again.' });
     }
   }
@@ -399,6 +402,9 @@ router.put('/profile', authenticate, memoryUpload.single('profileImage'), async 
       await db.prepare('UPDATE users SET profileImage = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(imagePath, req.user.id);
     } catch (err) {
       console.error('Image upload failed:', err);
+      if (err && err.message && String(err.message).includes('Image storage is not configured')) {
+        return res.status(503).json({ error: 'Image uploads are temporarily unavailable (storage not configured). Please try again later.' });
+      }
       return res.status(500).json({ error: 'Profile image upload failed. Please try again.' });
     }
   } else if (req.body.profileImage && req.body.profileImage.startsWith('data:')) {

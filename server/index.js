@@ -48,7 +48,7 @@ app.use((req, res, next) => {
       "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com https://accounts.google.com https://apis.google.com https://www.googletagmanager.com",
       "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com https://accounts.google.com https://fonts.googleapis.com",
       "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:",
-      "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://www.gstatic.com https://www.googletagmanager.com",
+      "img-src 'self' data: blob: https://res.cloudinary.com https://*.tile.openstreetmap.org https://www.gstatic.com https://www.googletagmanager.com",
       "connect-src 'self' https://accounts.google.com https://www.google-analytics.com https://region1.google-analytics.com",
       "frame-src https://accounts.google.com",
       "object-src 'none'",
