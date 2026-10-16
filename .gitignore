@@ -3,3 +3,6 @@ _*.log
 _cleanup_*.js
 _*.ps1
 _*.csv
+
+# Runtime image uploads (durable copies live in Cloudinary)
+uploads/

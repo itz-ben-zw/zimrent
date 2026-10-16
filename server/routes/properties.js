@@ -2,7 +2,8 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { getDb } = require('../database/db');
 const { authenticate, optionalAuth, authorize, requireVerifiedEmail } = require('../middleware/auth');
-const upload = require('../middleware/upload');
+const { memoryUpload } = require('../middleware/upload');
+const { storeImages } = require('../lib/images');
 
 const router = express.Router();
 
@@ -169,14 +170,22 @@ router.get('/:id', optionalAuth, async (req, res) => {
 });
 
 // POST /api/properties - Create property (landlord/admin)
-router.post('/', authenticate, requireVerifiedEmail, authorize('landlord', 'admin'), upload.array('images', 10), async (req, res) => {
+router.post('/', authenticate, requireVerifiedEmail, authorize('landlord', 'admin'), memoryUpload.array('images', 10), async (req, res) => {
   const { title, description, city, suburb, type, bedrooms, bathrooms, price, currency, wifi, electricStove, gasStove, fridge, solar, borehole, fenced, customAdditions, phone, email, whatsapp, latitude, longitude } = req.body;
 
   if (!title || !city || !suburb || !type || !price) {
     return res.status(400).json({ error: 'Title, city, suburb, type, and price are required' });
   }
 
-  const images = req.files ? req.files.map(f => `/uploads/${f.filename}`) : [];
+  let images = [];
+  if (req.files && req.files.length) {
+    try {
+      images = await storeImages(req.files, 'homify/properties');
+    } catch (err) {
+      console.error('Image upload failed:', err);
+      return res.status(500).json({ error: 'Image upload failed. Please try again.' });
+    }
+  }
 
   const property = {
     id: uuidv4(),
@@ -361,7 +370,7 @@ router.post('/:id/report', authenticate, requireVerifiedEmail, async (req, res) 
 });
 
 // POST /api/properties/:id/images - Upload images to existing property
-router.post('/:id/images', authenticate, authorize('landlord', 'admin'), upload.array('images', 10), async (req, res) => {
+router.post('/:id/images', authenticate, authorize('landlord', 'admin'), memoryUpload.array('images', 10), async (req, res) => {
   const db = getDb();
   const existing = await db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
 
@@ -372,7 +381,15 @@ router.post('/:id/images', authenticate, authorize('landlord', 'admin'), upload.
     return res.status(403).json({ error: 'Permission denied' });
   }
 
-  const newImages = req.files ? req.files.map(f => `/uploads/${f.filename}`) : [];
+  let newImages = [];
+  if (req.files && req.files.length) {
+    try {
+      newImages = await storeImages(req.files, 'homify/properties');
+    } catch (err) {
+      console.error('Image upload failed:', err);
+      return res.status(500).json({ error: 'Image upload failed. Please try again.' });
+    }
+  }
   const currentImages = JSON.parse(existing.images || '[]');
   const allImages = [...currentImages, ...newImages];
 

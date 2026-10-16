@@ -1,10 +1,11 @@
-﻿const express = require('express');
+const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { getDb } = require('../database/db');
 const { authenticate } = require('../middleware/auth');
-const upload = require('../middleware/upload');
+const { memoryUpload } = require('../middleware/upload');
+const { storeImage } = require('../lib/images');
 const emailService = require('../services/emailService');
 const smsService = require('../services/smsService');
 
@@ -41,7 +42,7 @@ function userResponse(user) {
 }
 
 // POST /api/auth/register
-router.post('/register', upload.single('profileImage'), async (req, res) => {
+router.post('/register', memoryUpload.single('profileImage'), async (req, res) => {
   const { fullName, email, password, role, phone, username } = req.body;
 
   const cleanName = String(fullName || '').trim().replace(/\s+/g, ' ');
@@ -56,7 +57,15 @@ router.post('/register', upload.single('profileImage'), async (req, res) => {
   if (cleanPhone && !/^\+?\d{7,15}$/.test(cleanPhone)) {
     return res.status(400).json({ error: 'Phone number looks invalid. Use digits with optional leading +, e.g. +263 71 234 5678' });
   }
-  const profileImage = req.file ? `/uploads/${req.file.filename}` : (req.body.profileImage || '');
+  let profileImage = req.body.profileImage || '';
+  if (req.file) {
+    try {
+      profileImage = await storeImage(req.file, 'homify/profile');
+    } catch (err) {
+      console.error('Image upload failed:', err);
+      return res.status(500).json({ error: 'Profile image upload failed. Please try again.' });
+    }
+  }
 
   // Validation
   if (!fullName || !email || !password) {
@@ -363,7 +372,7 @@ router.post('/csrf', authenticate, async (req, res) => {
 });
 
 // PUT /api/auth/profile - Update profile with image upload
-router.put('/profile', authenticate, upload.single('profileImage'), async (req, res) => {
+router.put('/profile', authenticate, memoryUpload.single('profileImage'), async (req, res) => {
   const { fullName, phone, username } = req.body;
   const db = getDb();
 
@@ -385,8 +394,13 @@ router.put('/profile', authenticate, upload.single('profileImage'), async (req, 
 
   // Handle profile image upload
   if (req.file) {
-    const imagePath = `/uploads/${req.file.filename}`;
-    await db.prepare('UPDATE users SET profileImage = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(imagePath, req.user.id);
+    try {
+      const imagePath = await storeImage(req.file, 'homify/profile');
+      await db.prepare('UPDATE users SET profileImage = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(imagePath, req.user.id);
+    } catch (err) {
+      console.error('Image upload failed:', err);
+      return res.status(500).json({ error: 'Profile image upload failed. Please try again.' });
+    }
   } else if (req.body.profileImage && req.body.profileImage.startsWith('data:')) {
     // base64 image from file input
     await db.prepare('UPDATE users SET profileImage = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(req.body.profileImage, req.user.id);
