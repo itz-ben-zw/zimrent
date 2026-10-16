@@ -182,7 +182,7 @@ router.post('/login', async (req, res) => {
 // The client sends the Google access token from Google Identity Services;
 // the server verifies it with Google and trusts ONLY that result. Accepting
 // email/googleId posted by the browser would let anyone sign in as any user.
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '909174371495-o975l66jfpda1sebp1ootcme43jb9nc7.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '909174371495-l1f3thbsm4fkbidbdtq8igpks1mutj3h.apps.googleusercontent.com';
 // Reserved admin address - Google sign-in as this email always resolves to
 // the admin account and never downgrades it to tenant.
 const ADMIN_EMAIL_RESERVED = String(process.env.ADMIN_EMAIL || 'chigodobenji@gmail.com').trim().toLowerCase();

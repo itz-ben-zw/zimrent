@@ -220,7 +220,7 @@ function resetPhoneLogin() {
 //   http://localhost:3001             (local dev)
 // See GOOGLE_SETUP.md for full setup steps.
 function handleGoogleLogin() {
-  const GOOGLE_CLIENT_ID = '909174371495-o975l66jfpda1sebp1ootcme43jb9nc7.apps.googleusercontent.com';
+  const GOOGLE_CLIENT_ID = '909174371495-l1f3thbsm4fkbidbdtq8igpks1mutj3h.apps.googleusercontent.com';
   if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes('YOUR_GOOGLE_CLIENT_ID')) {
     showError('Google Sign-In is not configured yet. Please use Email or Phone login.');
     return;
