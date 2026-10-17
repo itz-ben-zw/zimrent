@@ -322,7 +322,7 @@ router.post('/phone/verify', async (req, res) => {
     return res.status(400).json({ error: 'No OTP sent to this number. Request a new OTP.' });
   }
   if (Date.now() > stored.expiresAt) {
-    otpStore.delete(phone);
+    otpStore.delete(cleanPhone);
     return res.status(400).json({ error: 'OTP expired. Request a new one.' });
   }
   if (stored.attempts >= 5) {
@@ -352,6 +352,10 @@ router.post('/phone/verify', async (req, res) => {
   } else if (!user.phoneVerified) {
     await db.prepare('UPDATE users SET phoneVerified = 1, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
     user.phoneVerified = 1;
+  }
+
+  if (user.status === 'suspended') {
+    return res.status(403).json({ error: 'This account has been suspended. Contact support for help.' });
   }
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
