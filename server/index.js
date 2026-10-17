@@ -1,5 +1,25 @@
 require('dotenv').config();
 const express = require('express');
+
+// Express 4 does not forward rejected async route handlers to error middleware.
+// Wrap route callbacks once, before any routers are created, so DB/network
+// failures produce a controlled 500 instead of an unhandled rejection.
+const routerPrototype = Object.getPrototypeOf(express.Router());
+for (const method of ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'all']) {
+  const original = routerPrototype[method];
+  if (typeof original !== 'function' || original.__asyncWrapped) continue;
+  const wrapped = function (...args) {
+    return original.apply(this, args.map(arg =>
+      typeof arg === 'function'
+        ? function (req, res, next) {
+            return Promise.resolve(arg(req, res, next)).catch(next);
+          }
+        : arg
+    ));
+  };
+  wrapped.__asyncWrapped = true;
+  routerPrototype[method] = wrapped;
+}
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
@@ -13,7 +33,6 @@ const authRoutes = require('./routes/auth');
 const propertyRoutes = require('./routes/properties');
 const applicationRoutes = require('./routes/applications');
 const favoriteRoutes = require('./routes/favorites');
-const messageRoutes = require('./routes/messages');
 const conversationRoutes = require('./routes/conversations');
 const adminRoutes = require('./routes/admin');
 
@@ -22,7 +41,7 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(morgan('dev'));
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // CORS - use FRONTEND_URL env var, default to * for dev
@@ -76,11 +95,19 @@ app.use('/api/auth', authRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/favorites', favoriteRoutes);
-app.use('/api/messages', messageRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Serve static frontend files
+// Do not expose backend source, configuration, or repository metadata through
+// the frontend static-file handler.
+app.use((req, res, next) => {
+  if (/^\/(server|\.git|node_modules)(\/|$)/i.test(req.path) ||
+      /^\/(\.env|package(-lock)?\.json|render\.yaml)$/i.test(req.path)) {
+    return res.status(404).end();
+  }
+  next();
+});
 app.use(express.static(path.join(__dirname, '..')));
 
 // Catch-all: real pages resolve above via express.static. Anything unmatched
@@ -93,35 +120,44 @@ app.get('*', async (req, res) => {
   res.status(404).sendFile(path.join(__dirname, '..', '404.html'));
 });
 
-// Initialize database and create admin user
+// Final error handler for rejected async routes and unexpected middleware errors.
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  console.error('Request failed:', err && err.message ? err.message : err);
+  res.status(err.status && err.status >= 400 && err.status < 600 ? err.status : 500)
+    .json({ error: 'An unexpected server error occurred. Please try again.' });
+});
+
+// Initialize database and optionally provision an admin user
 async function initializeApp() {
   await initDb();
   await runMigration();
   
   const db = getDb();
   
-  // Admin account is chigodobenji@gmail.com. Defaults to that address when
-  // ADMIN_EMAIL is not set, and promotes the user if they already exist
-  // (e.g. signed up via Google before first boot) instead of skipping.
-  const adminEmail = String(process.env.ADMIN_EMAIL || 'chigodobenji@gmail.com').trim().toLowerCase();
-  if (adminEmail) {
+  // Admin provisioning is opt-in. Never ship a known default email/password,
+  // and never silently promote an existing account during startup.
+  const adminEmail = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (adminEmail && adminPassword) {
     try {
-      const existingAdmin = await db.prepare('SELECT id, role FROM users WHERE email = ?').get(adminEmail);
+      const existingAdmin = await db.prepare('SELECT id FROM users WHERE email = ?').get(adminEmail);
       if (!existingAdmin) {
-        const passwordHash = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'admin123', 10);
+        const passwordHash = await bcrypt.hash(adminPassword, 12);
         await db.prepare('INSERT INTO users (id, fullName, email, passwordHash, role, phone) VALUES (?, ?, ?, ?, ?, ?)').run(
-          uuidv4(), 'Admin', adminEmail, passwordHash, 'admin', '+263 77 000 0000'
+          uuidv4(), 'Admin', adminEmail, passwordHash, 'admin', ''
         );
-        console.log('[OK]  Admin created:', adminEmail);
-      } else if (existingAdmin.role !== 'admin') {
-        await db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(existingAdmin.id);
-        console.log('[OK]  Existing user promoted to admin:', adminEmail);
+        console.log('[OK] Admin account provisioned from ADMIN_EMAIL');
+      } else {
+        console.log('[OK] ADMIN_EMAIL already exists; no role changes made automatically');
       }
     } catch (err) {
-      console.warn('Skipped admin creation:', err.message);
+      console.warn('Skipped admin provisioning:', err.message);
     }
+  } else {
+    console.log('[INFO] Admin provisioning skipped: set ADMIN_EMAIL and ADMIN_PASSWORD to enable it');
   }
-  
+
   // One-time cleanup: remove the sample/demo listings and demo landlord
   // account that used to be auto-seeded on every server start. Safe to run
   // repeatedly - it's a no-op once they're gone.
