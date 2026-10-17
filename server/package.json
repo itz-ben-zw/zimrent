@@ -1,7 +1,7 @@
 {
   "name": "homify-backend",
   "version": "1.0.0",
-  "description": "Homify Property Rental Platform Backend",
+  "description": "ZimRent Property Rental Platform Backend",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
