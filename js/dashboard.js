@@ -245,6 +245,13 @@ async function initAddListing() {
   initImageUpload();
   initMapPicker();
   
+  // Wire the form submit handler so clicking "Save Listing" POSTs to the API
+  // instead of doing a native form submission (which just reloads the page).
+  const addForm = document.getElementById('add-listing-form');
+  if (addForm) {
+    addForm.addEventListener('submit', handleListingSubmit);
+  }
+  
   if (editId) {
     editingId = editId;
     try {

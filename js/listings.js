@@ -277,6 +277,11 @@ function escapeHtml(text) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Only initialise the browse/listings page. Running initListingsPage() on
+  // other pages (e.g. add-listing.html) makes an unnecessary API call and can
+  // reference elements that don't exist there.
+  if (window.location.pathname.split('/').pop() !== 'listings.html') return;
+
   currentListings = [];
   initListingsPage();
 });
