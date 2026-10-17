@@ -190,6 +190,31 @@ router.post('/', authenticate, requireVerifiedEmail, authorize('landlord', 'admi
     }
   }
 
+  // Also accept base64 image data URLs sent in the JSON body. The frontend
+  // reads files as DataURLs and POSTs them as application/json, not
+  // multipart/form-data, so req.files is empty. Convert each data URL to a
+  // buffer and run it through the same Cloudinary / disk pipeline.
+  if (!images.length && Array.isArray(req.body.images)) {
+    const fakeFiles = req.body.images.map((dataUrl, i) => {
+      const match = String(dataUrl).match(/^data:image\/(\w+);base64,/);
+      const ext = match ? match[1] : 'jpg';
+      const base64 = String(dataUrl).replace(/^data:image\/\w+;base64,/, '');
+      return {
+        buffer: Buffer.from(base64, 'base64'),
+        originalname: `image-${i}.${ext}`
+      };
+    });
+    try {
+      images = await storeImages(fakeFiles, 'homify/properties');
+    } catch (err) {
+      console.error('Image upload failed:', err);
+      if (err && err.message && err.message.includes('Image storage is not configured')) {
+        return res.status(503).json({ error: 'Image uploads are temporarily unavailable (storage not configured). Please try again later.' });
+      }
+      return res.status(500).json({ error: 'Image upload failed. Please try again.' });
+    }
+  }
+
   const property = {
     id: uuidv4(),
     landlordId: req.user.id,

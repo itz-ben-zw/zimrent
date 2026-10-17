@@ -2,7 +2,11 @@
    HOMIFY - Listings Page: Browse & Filter
    ========================================== */
 
-const ZIM_LOCATIONS = {
+/* Shared catalogs. `var` (not const) on purpose: add-listing.html loads both
+   listings.js and dashboard.js as classic scripts, and two top-level `const`
+   declarations with the same name throw "already been declared". `var` simply
+   re-assigns the identical value — harmless. */
+var ZIM_LOCATIONS = {
   'Bulawayo': [
     'Barbourfields', 'Bellevue', 'Belmont', 'Belmont East', 'Bon Accord', 'Boroughs', 'Bradfield', 'Burnside', 'Buena Vista', 'Caledonia',
     'Cement', 'Cowdray Park', 'Donnington', 'Douglasdale', 'Dromore',
@@ -24,7 +28,7 @@ const ZIM_LOCATIONS = {
   ]
 };
 
-const PROPERTY_TYPES = ['House', 'Apartment', 'Cottage', 'Townhouse', 'Room'];
+var PROPERTY_TYPES = ['House', 'Apartment', 'Cottage', 'Townhouse', 'Room'];
 
 async function fetchListingsFromAPI() {
   const headers = { 'Content-Type': 'application/json' };
