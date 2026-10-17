@@ -204,7 +204,6 @@ router.post('/login', async (req, res) => {
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 // Reserved admin address - Google sign-in as this email always resolves to
 // the admin account and never downgrades it to tenant.
-const ADMIN_EMAIL_RESERVED = String(process.env.ADMIN_EMAIL || 'chigodobenji@gmail.com').trim().toLowerCase();
 
 router.post('/google', async (req, res) => {
   const { accessToken } = req.body;
@@ -313,7 +312,8 @@ router.post('/phone/verify', async (req, res) => {
     return res.status(400).json({ error: 'Phone and OTP are required' });
   }
 
-  const stored = otpStore.get(phone);
+  const cleanPhone = String(phone).replace(/[\s\-]/g, '');
+  const stored = otpStore.get(cleanPhone);
   if (!stored) {
     return res.status(400).json({ error: 'No OTP sent to this number. Request a new OTP.' });
   }
@@ -329,15 +329,15 @@ router.post('/phone/verify', async (req, res) => {
   otpStore.delete(phone);
 
   const db = getDb();
-  let user = await db.prepare('SELECT * FROM users WHERE phone = ? AND phone != \'\'').get(phone);
+  let user = await db.prepare('SELECT * FROM users WHERE phone = ? AND phone != \'\'').get(cleanPhone);
 
   if (!user) {
     // Auto-register with phone
     const id = uuidv4();
-    const email = `user_${phone.replace(/[^0-9]/g, '')}@homify.phone`;
+    const email = `user_${cleanPhone.replace(/[^0-9]/g, '')}@homify.phone`;
     await db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, phone, username, profileImage, authProvider, phoneVerified) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-      id, fullName || 'User', email, bcrypt.hashSync(uuidv4(), 10), 'tenant', phone, null, '', 'phone', 1
+      id, fullName || 'User', email, bcrypt.hashSync(uuidv4(), 10), 'tenant', cleanPhone, null, '', 'phone', 1
     );
     user = await db.prepare('SELECT * FROM users WHERE id = ?').get(id);
   } else if (!user.phoneVerified) {
