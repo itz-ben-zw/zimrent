@@ -254,6 +254,10 @@ router.post('/google', async (req, res) => {
     }
   }
 
+  if (user.status === 'suspended') {
+    return res.status(403).json({ error: 'This account has been suspended. Contact support for help.' });
+  }
+
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
   const refreshToken = await issueRefreshToken(user.id, req);
   res.json({ token, refreshToken, user: userResponse(user) });
@@ -282,7 +286,7 @@ router.post('/phone/send-otp', async (req, res) => {
   }
 
   // Store OTP with 5-minute expiry
-  otpStore.set(cleanPhone, { otp, expiresAt: Date.now() + 5 * 60 * 1000 });
+  otpStore.set(cleanPhone, { otp, expiresAt: Date.now() + 5 * 60 * 1000, attempts: 0 });
 
   let sent = false;
   try {
@@ -321,7 +325,12 @@ router.post('/phone/verify', async (req, res) => {
     otpStore.delete(phone);
     return res.status(400).json({ error: 'OTP expired. Request a new one.' });
   }
+  if (stored.attempts >= 5) {
+    otpStore.delete(cleanPhone);
+    return res.status(429).json({ error: 'Too many incorrect attempts. Request a new OTP.' });
+  }
   if (stored.otp !== otp) {
+    stored.attempts += 1;
     return res.status(400).json({ error: 'Invalid OTP' });
   }
 
