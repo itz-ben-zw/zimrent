@@ -13,11 +13,11 @@ express.Router = function (...args) {
     const wrapped = function (...routeArgs) {
       return original.apply(this, routeArgs.map(handler => {
         if (typeof handler !== 'function') return handler;
-        return function (...handlerArgs) {
-          // Express error handlers receive (err, req, res, next).
-          if (handler.length === 4) return handler(...handlerArgs);
-          const next = handlerArgs[handlerArgs.length - 1];
-          return Promise.resolve(handler(...handlerArgs)).catch(next);
+        if (handler.length === 4) {
+          return function (err, req, res, next) { return handler(err, req, res, next); };
+        }
+        return function (req, res, next) {
+          return Promise.resolve(handler(req, res, next)).catch(next);
         };
       }));
     };
