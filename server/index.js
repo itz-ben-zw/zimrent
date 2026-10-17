@@ -2,24 +2,31 @@ require('dotenv').config();
 const express = require('express');
 
 // Express 4 does not forward rejected async route handlers to error middleware.
-// Wrap route callbacks once, before any routers are created, so DB/network
-// failures produce a controlled 500 instead of an unhandled rejection.
-const routerPrototype = Object.getPrototypeOf(express.Router());
-for (const method of ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'all']) {
-  const original = routerPrototype[method];
-  if (typeof original !== 'function' || original.__asyncWrapped) continue;
-  const wrapped = function (...args) {
-    return original.apply(this, args.map(arg =>
-      typeof arg === 'function'
-        ? function (req, res, next) {
-            return Promise.resolve(arg(req, res, next)).catch(next);
-          }
-        : arg
-    ));
-  };
-  wrapped.__asyncWrapped = true;
-  routerPrototype[method] = wrapped;
-}
+// Wrap route callbacks on each router instance so async DB/network failures
+// reach the final error handler instead of becoming unhandled rejections.
+const OriginalRouter = express.Router;
+express.Router = function (...args) {
+  const router = OriginalRouter(...args);
+  for (const method of ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'all']) {
+    const original = router[method];
+    if (typeof original !== 'function' || original.__asyncWrapped) continue;
+    const wrapped = function (...routeArgs) {
+      return original.apply(this, routeArgs.map(handler => {
+        if (typeof handler !== 'function') return handler;
+        return function (...handlerArgs) {
+          // Express error handlers receive (err, req, res, next).
+          if (handler.length === 4) return handler(...handlerArgs);
+          const next = handlerArgs[handlerArgs.length - 1];
+          return Promise.resolve(handler(...handlerArgs)).catch(next);
+        };
+      }));
+    };
+    wrapped.__asyncWrapped = true;
+    router[method] = wrapped;
+  }
+  return router;
+};
+express.Router.prototype = OriginalRouter.prototype;
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
@@ -41,7 +48,7 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(morgan('dev'));
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // CORS - use FRONTEND_URL env var, default to * for dev
