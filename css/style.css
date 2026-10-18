@@ -1331,3 +1331,26 @@ summary:focus-visible {
     max-width: 1700px;
   }
 }
+
+/* Nav logo mark: Homify icon left of the wordmark.
+   Spacing sits on the image (not flex gap) so the "Homi"+<span>fy</span>
+   text runs stay one uninterrupted word. */
+.nav-brand {
+    display: inline-flex;
+    align-items: center;
+}
+
+.logo-mark {
+    margin-right: 0.5rem;
+    height: 34px;
+    width: auto;
+    border-radius: 9px;
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .logo-mark {
+        height: 26px;
+        border-radius: 7px;
+    }
+}
