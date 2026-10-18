@@ -207,6 +207,7 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 
 router.post('/google', async (req, res) => {
   const { accessToken } = req.body;
+  const requestedRole = req.body.role === 'landlord' ? 'landlord' : 'tenant';
 
   if (!accessToken || typeof accessToken !== 'string') {
     return res.status(400).json({ error: 'Google access token is required' });
@@ -248,10 +249,17 @@ router.post('/google', async (req, res) => {
       const id = uuidv4();
       await db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, username, profileImage, authProvider, providerId, emailVerified) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`).run(
-        id, googleUser.name || googleUser.email.split('@')[0], googleUser.email, bcrypt.hashSync(uuidv4(), 10), 'tenant', null, googleUser.picture || '', 'google', googleUser.sub
+        id, googleUser.name || googleUser.email.split('@')[0], googleUser.email, bcrypt.hashSync(uuidv4(), 10), requestedRole, null, googleUser.picture || '', 'google', googleUser.sub
       );
       user = await db.prepare('SELECT * FROM users WHERE id = ?').get(id);
     }
+  }
+
+  // Allow a signed-in tenant to opt into landlord features explicitly.
+  // Never change an administrator's role, and never downgrade an existing landlord.
+  if (user.role === 'tenant' && requestedRole === 'landlord') {
+    await db.prepare("UPDATE users SET role = 'landlord', updatedAt = CURRENT_TIMESTAMP WHERE id = ?").run(user.id);
+    user = await db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
   }
 
   if (user.status === 'suspended') {
