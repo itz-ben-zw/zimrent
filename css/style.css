@@ -1188,3 +1188,25 @@ summary:focus-visible {
   opacity: 1 !important;
   transform: scale(1.05);
 }
+/* Blue verified tag overlaid on listing card images */
+.verified-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.95);
+  color: #1d9bf0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.65rem;
+  border-radius: 50px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+.verified-tag i { color: #1d9bf0; font-size: 0.85rem; }
+/* Subtle zoom on listing card image hover */
+.card-img img { transition: transform 0.35s ease; }
+.property-card:hover .card-img img { transform: scale(1.05); }

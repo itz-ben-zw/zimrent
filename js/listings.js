@@ -206,6 +206,18 @@ function imgSrc(img) {
   return (typeof img === 'string') ? img : (img.data || '');
 }
 
+// If a listing image fails to load (bad URL, deleted object), swap in the
+// generic placeholder instead of leaving a broken-image icon + alt text.
+// Only the <img> is removed so the overlaid verified tag survives.
+function cardImgFallback(el) {
+  if (!el || !el.parentElement) return;
+  const placeholder = document.createElement('div');
+  placeholder.className = 'card-img-placeholder';
+  placeholder.innerHTML = '<i class="fas fa-home" style="font-size:3rem; color:#ccc;"></i>';
+  el.parentElement.insertBefore(placeholder, el);
+  el.remove();
+}
+
 function renderListings(listings) {
   const grid = document.getElementById('listings-grid');
   const count = document.getElementById('listings-count');
@@ -230,9 +242,10 @@ function renderListings(listings) {
     <div class="property-card" role="button" tabindex="0" onclick="viewProperty('${l.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();viewProperty('${l.id}');}">
       <div class="card-img">
         ${l.images && l.images.length > 0 
-          ? `<img src="${imgSrc(l.images[0])}" alt="${escapeHtml(l.title)}">` 
+          ? `<img src="${imgSrc(l.images[0])}" alt="${escapeHtml(l.title)}" loading="lazy" onerror="cardImgFallback(this)">` 
           : `<div class="card-img-placeholder"><i class="fas fa-home" style="font-size:3rem; color:#ccc;"></i></div>`
         }
+        ${l.status === 'approved' ? '<span class="verified-tag"><i class="fas fa-circle-check"></i> Verified</span>' : ''}
       </div>
       <div class="card-body">
         <div class="card-price">
@@ -243,7 +256,6 @@ function renderListings(listings) {
           <i class="fas fa-map-marker-alt" style="color:var(--text-muted);"></i> ${escapeHtml(l.city)}, ${escapeHtml(l.suburb)}
       </div>
       <div class="card-amenities">
-          ${l.status === 'approved' ? '<span class="amenity-badge yes"><i class="fas fa-check-circle"></i> Verified</span>' : ''}
           ${l.solar ? '<span class="amenity-badge yes">Solar</span>' : ''}
           ${l.borehole ? '<span class="amenity-badge yes">Borehole</span>' : ''}
           ${l.wifi ? '<span class="amenity-badge yes">Wi-Fi</span>' : ''}
