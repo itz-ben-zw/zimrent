@@ -89,6 +89,14 @@
             <!-- Social / Google Login -->
             <div class="auth-panel" id="panel-social" style="display:none; text-align:center;">
                 <p style="color:var(--text-muted); margin-bottom:1.5rem;">Sign in with your social account</p>
+                <div style="margin-bottom:1rem;">
+                    <label style="font-size:0.85rem; color:var(--text); margin-right:1rem; cursor:pointer;">
+                        <input type="radio" name="google-role" value="tenant" checked style="margin-right:0.4rem;"> Tenant
+                    </label>
+                    <label style="font-size:0.85rem; color:var(--text); cursor:pointer;">
+                        <input type="radio" name="google-role" value="landlord" style="margin-right:0.4rem;"> Landlord
+                    </label>
+                </div>
                 <button id="google-login-btn" class="btn btn-lg" style="width:100%; background:#fff; border:1px solid var(--border); color:#1f2937; display:flex; align-items:center; justify-content:center; gap:0.8rem; padding:0.8rem;" onclick="handleGoogleLogin()">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:22px; height:22px;" alt="Google">
                     Continue with Google

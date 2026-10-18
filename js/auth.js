@@ -248,10 +248,12 @@ function handleGoogleLogin() {
       // Send the access token to our backend; it verifies the token with
       // Google and only then creates the session (never trust profile data
       // posted straight from the browser).
+      const roleEl = document.querySelector('input[name="google-role"]:checked');
+      const role = roleEl ? roleEl.value : 'tenant';
       fetch(`${API}/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accessToken: response.access_token })
+        body: JSON.stringify({ accessToken: response.access_token, role })
       })
       .then(r => r.json())
       .then(data => {

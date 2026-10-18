@@ -1,20 +1,21 @@
-const { isConfigured, uploadBuffer } = require('./cloudinary');
+const { isConfigured, uploadBuffer } = require('./supabase');
 const { saveBufferToDisk } = require('../middleware/upload');
 
 // Persist one uploaded image and return the URL/path to store in the DB.
-// Uses Cloudinary when configured; otherwise falls back to the local uploads
-// directory so local dev and the e2e suite keep working without credentials.
+// Uses Supabase Storage when configured; otherwise falls back to the local
+// uploads directory so local dev and the e2e suite keep working without
+// credentials.
 //
 // In production disk is ephemeral: refuse the local fallback with a loud 503
-// so the misconfiguration (missing Cloudinary env vars) is visible instead
-// of silently writing images that vanish on the next deploy.
+// so the misconfiguration (missing Supabase env vars) is visible instead of
+// silently writing images that vanish on the next deploy.
 async function storeImage(file, folder = 'homify') {
   if (isConfigured) {
-    return uploadBuffer(file.buffer, folder);
+    return uploadBuffer(file.buffer, folder, file.originalname);
   }
   if (process.env.NODE_ENV === 'production') {
     throw new Error(
-      'Image storage is not configured: set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET.'
+      'Image storage is not configured: set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and SUPABASE_BUCKET.'
     );
   }
   return saveBufferToDisk(file.buffer, file.originalname);

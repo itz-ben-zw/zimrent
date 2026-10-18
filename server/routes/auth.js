@@ -118,23 +118,30 @@ router.post('/register', memoryUpload.single('profileImage'), async (req, res) =
     username: username || null,
     profileImage,
     authProvider: 'email',
-    providerId: ''
+    providerId: '',
+    emailVerified: emailService.isConfigured() ? 0 : 1
   };
 
-  await db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, phone, username, profileImage, authProvider, providerId) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-    user.id, user.fullName, user.email, user.passwordHash, user.role, user.phone, user.username, user.profileImage, user.authProvider, user.providerId
+  await db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, phone, username, profileImage, authProvider, providerId, emailVerified) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    user.id, user.fullName, user.email, user.passwordHash, user.role, user.phone, user.username, user.profileImage, user.authProvider, user.providerId, user.emailVerified
   );
 
-  // Issue verification email token
-  const verifyToken = uuidv4();
-  const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-  await db.prepare('INSERT INTO email_verifications (id, userId, token, expiresAt) VALUES (?, ?, ?, ?)').run(uuidv4(), user.id, verifyToken, verifyExpires);
+  // Only issue a verification token + send the email when SMTP is configured.
+  // When SMTP isn't available (e.g. demo/dev on Render), auto-verify so new
+  // accounts aren't stuck behind a gate they can never satisfy.
+  let emailVerificationSent = false;
+  let verifyToken = null;
+  if (emailService.isConfigured()) {
+    verifyToken = uuidv4();
+    const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    await db.prepare('INSERT INTO email_verifications (id, userId, token, expiresAt) VALUES (?, ?, ?, ?)').run(uuidv4(), user.id, verifyToken, verifyExpires);
 
-  // Send the verification email for real (non-fatal if delivery fails; the
-  // user can resend later). emailVerificationSent tells the frontend whether
-  // a mail actually went out, so we never silently pretend it did.
-  const emailVerificationSent = await emailService.sendVerificationEmail(email, fullName, verifyToken);
+    // Send the verification email for real (non-fatal if delivery fails; the
+    // user can resend later). emailVerificationSent tells the frontend whether
+    // a mail actually went out, so we never silently pretend it did.
+    emailVerificationSent = await emailService.sendVerificationEmail(email, fullName, verifyToken);
+  }
 
   const accessToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
   const refreshToken = await issueRefreshToken(id, req);
@@ -143,7 +150,7 @@ router.post('/register', memoryUpload.single('profileImage'), async (req, res) =
   // Dev only: return the raw token so automated tests can exercise the
   // verify-email flow without SMTP. Never returned in production, where it
   // would let anyone "verify" without receiving the email.
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== 'production' && verifyToken) {
     responseBody.verifyToken = verifyToken;
   }
   res.status(201).json(responseBody);
@@ -200,7 +207,7 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '909174371495-l1f3thbsm
 const ADMIN_EMAIL_RESERVED = String(process.env.ADMIN_EMAIL || 'chigodobenji@gmail.com').trim().toLowerCase();
 
 router.post('/google', async (req, res) => {
-  const { accessToken } = req.body;
+  const { accessToken, role } = req.body;
 
   if (!accessToken || typeof accessToken !== 'string') {
     return res.status(400).json({ error: 'Google access token is required' });
@@ -226,6 +233,9 @@ router.post('/google', async (req, res) => {
     return res.status(502).json({ error: 'Could not verify Google sign-in. Please try again.' });
   }
 
+  const validRoles = ['tenant', 'landlord'];
+  const userRole = role && validRoles.includes(role) ? role : 'tenant';
+
   const db = getDb();
   let user = await db.prepare('SELECT * FROM users WHERE providerId = ? AND authProvider = ?').get(googleUser.sub, 'google');
 
@@ -242,10 +252,18 @@ router.post('/google', async (req, res) => {
       const id = uuidv4();
       await db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, username, profileImage, authProvider, providerId, emailVerified) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`).run(
-        id, googleUser.name || googleUser.email.split('@')[0], googleUser.email, bcrypt.hashSync(uuidv4(), 10), 'tenant', null, googleUser.picture || '', 'google', googleUser.sub
+        id, googleUser.name || googleUser.email.split('@')[0], googleUser.email, bcrypt.hashSync(uuidv4(), 10), userRole, null, googleUser.picture || '', 'google', googleUser.sub
       );
       user = await db.prepare('SELECT * FROM users WHERE id = ?').get(id);
     }
+  }
+
+  // Reserved admin address: Google sign-in as this email always resolves to
+  // the admin account and never downgrades it to tenant, even if the account
+  // was first created (or linked to Google) before the admin seed ran.
+  if (String(user.email || '').toLowerCase() === ADMIN_EMAIL_RESERVED && user.role !== 'admin') {
+    await db.prepare(`UPDATE users SET role = 'admin' WHERE id = ?`).run(user.id);
+    user.role = 'admin';
   }
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
