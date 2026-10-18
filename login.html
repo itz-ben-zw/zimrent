@@ -88,7 +88,14 @@
 
             <!-- Social / Google Login -->
             <div class="auth-panel" id="panel-social" style="display:none; text-align:center;">
-                <p style="color:var(--text-muted); margin-bottom:1.5rem;">Sign in with your social account</p>
+                <p style="color:var(--text-muted); margin-bottom:1rem;">Continue with Google as:</p>
+                <div class="form-group" style="text-align:left; margin-bottom:1rem;">
+                    <label for="google-account-role">I want to</label>
+                    <select id="google-account-role" class="form-control">
+                        <option value="tenant">Look for accommodation (Tenant)</option>
+                        <option value="landlord">List my property (Landlord)</option>
+                    </select>
+                </div>
                 <button id="google-login-btn" class="btn btn-lg" style="width:100%; background:#fff; border:1px solid var(--border); color:#1f2937; display:flex; align-items:center; justify-content:center; gap:0.8rem; padding:0.8rem;" onclick="handleGoogleLogin()">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:22px; height:22px;" alt="Google">
                     Continue with Google
