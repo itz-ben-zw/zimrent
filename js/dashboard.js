@@ -398,9 +398,21 @@ function initImageUpload() {
   dropArea.addEventListener('click', () => fileInput.click());
   
   fileInput.addEventListener('change', async (e) => {
-    const images = await processImages(e.target);
-    window._tempImages = [...(window._tempImages || []), ...images];
-    renderUploadPreview();
+    try {
+      const images = await processImages(e.target);
+      const current = window._tempImages || [];
+      if (current.length + images.length > 10) {
+        const message = 'A listing can have a maximum of 10 images. Remove some images before adding more.';
+        if (window.toast) toast.error(message); else alert(message);
+        return;
+      }
+      window._tempImages = [...current, ...images];
+      renderUploadPreview();
+    } catch (err) {
+      if (window.toast) toast.error(err.message); else alert(err.message);
+    } finally {
+      fileInput.value = '';
+    }
   });
   
   dropArea.addEventListener('dragover', (e) => {
@@ -415,10 +427,22 @@ function initImageUpload() {
   dropArea.addEventListener('drop', async (e) => {
     e.preventDefault();
     dropArea.style.borderColor = 'var(--border)';
-    fileInput.files = e.dataTransfer.files;
-    const images = await processImages(fileInput);
-    window._tempImages = [...(window._tempImages || []), ...images];
-    renderUploadPreview();
+    try {
+      fileInput.files = e.dataTransfer.files;
+      const images = await processImages(fileInput);
+      const current = window._tempImages || [];
+      if (current.length + images.length > 10) {
+        const message = 'A listing can have a maximum of 10 images. Remove some images before adding more.';
+        if (window.toast) toast.error(message); else alert(message);
+        return;
+      }
+      window._tempImages = [...current, ...images];
+      renderUploadPreview();
+    } catch (err) {
+      if (window.toast) toast.error(err.message); else alert(err.message);
+    } finally {
+      fileInput.value = '';
+    }
   });
 }
 
