@@ -510,7 +510,11 @@ button { cursor: pointer; font-family: inherit; }
     border: 1px solid var(--border);
 }
 
-.amenity-badge.yes { background: rgba(46,204,113,0.14); color: #2ecc71; border-color: rgba(46,204,113,0.35); }
+.amenity-badge.yes {
+    background: rgba(41, 168, 245, 0.12);
+    color: var(--primary-light);
+    border-color: rgba(41, 168, 245, 0.35);
+}
 .amenity-badge.no { background: rgba(255,107,107,0.12); color: #ff9d9d; border-color: rgba(255,107,107,0.3); }
 
 .card-action {
@@ -1316,5 +1320,14 @@ summary:focus-visible {
 
   .filter-reset {
     grid-column: 1 / -1;
+  }
+}
+
+/* Wide screens: listings page containers grow beyond 1200px so the card
+   grid can show 3-4 columns on large monitors (nav grows with it). */
+@media (min-width: 1440px) {
+  body.page-listings .container,
+  body.page-listings .nav-inner {
+    max-width: 1700px;
   }
 }
