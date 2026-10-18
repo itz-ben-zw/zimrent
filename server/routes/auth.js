@@ -320,7 +320,17 @@ router.post('/phone/verify', async (req, res) => {
     return res.status(400).json({ error: 'Phone and OTP are required' });
   }
 
-  const cleanPhone = String(phone).replace(/[\s\-]/g, '');
+  // Use the same canonical format as /phone/send-otp, including dots and parentheses.
+  if (typeof phone !== 'string' || !/^\+?[\d\s().-]{7,24}$/.test(phone)) {
+    return res.status(400).json({ error: 'Valid phone number is required' });
+  }
+  const cleanPhone = phone.replace(/[\s().-]/g, '');
+  if (!/^\+?\d{7,15}$/.test(cleanPhone)) {
+    return res.status(400).json({ error: 'Valid phone number is required' });
+  }
+  if (typeof otp !== 'string' && typeof otp !== 'number') {
+    return res.status(400).json({ error: 'Valid OTP is required' });
+  }
   const stored = otpStore.get(cleanPhone);
   if (!stored) {
     return res.status(400).json({ error: 'No OTP sent to this number. Request a new OTP.' });
@@ -333,7 +343,7 @@ router.post('/phone/verify', async (req, res) => {
     otpStore.delete(cleanPhone);
     return res.status(429).json({ error: 'Too many incorrect attempts. Request a new OTP.' });
   }
-  if (stored.otp !== otp) {
+  if (stored.otp !== String(otp)) {
     stored.attempts += 1;
     return res.status(400).json({ error: 'Invalid OTP' });
   }
