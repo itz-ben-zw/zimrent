@@ -142,27 +142,31 @@ async function initializeApp() {
   
   const db = getDb();
   
-  // Admin provisioning is opt-in. Never ship a known default email/password,
-  // and never silently promote an existing account during startup.
-  const adminEmail = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+  // Preserve the original configured admin account. If it already exists,
+  // ensure it remains an admin; do not change its password or other profile data.
+  // A new admin is created only when both environment variables are configured.
+  const adminEmail = String(process.env.ADMIN_EMAIL || 'chigodobenji@gmail.com').trim().toLowerCase();
   const adminPassword = process.env.ADMIN_PASSWORD;
-  if (adminEmail && adminPassword) {
-    try {
-      const existingAdmin = await db.prepare('SELECT id FROM users WHERE email = ?').get(adminEmail);
-      if (!existingAdmin) {
-        const passwordHash = await bcrypt.hash(adminPassword, 12);
-        await db.prepare('INSERT INTO users (id, fullName, email, passwordHash, role, phone) VALUES (?, ?, ?, ?, ?, ?)').run(
-          uuidv4(), 'Admin', adminEmail, passwordHash, 'admin', ''
-        );
-        console.log('[OK] Admin account provisioned from ADMIN_EMAIL');
+  try {
+    const existingAdmin = await db.prepare('SELECT id, role FROM users WHERE LOWER(email) = ?').get(adminEmail);
+    if (existingAdmin) {
+      if (existingAdmin.role !== 'admin') {
+        await db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(existingAdmin.id);
+        console.log('[OK] Configured admin account role restored');
       } else {
-        console.log('[OK] ADMIN_EMAIL already exists; no role changes made automatically');
+        console.log('[OK] Configured admin account exists');
       }
-    } catch (err) {
-      console.warn('Skipped admin provisioning:', err.message);
+    } else if (adminPassword) {
+      const passwordHash = await bcrypt.hash(adminPassword, 12);
+      await db.prepare('INSERT INTO users (id, fullName, email, passwordHash, role, phone) VALUES (?, ?, ?, ?, ?, ?)').run(
+        uuidv4(), 'Admin', adminEmail, passwordHash, 'admin', ''
+      );
+      console.log('[OK] Admin account provisioned from ADMIN_EMAIL');
+    } else {
+      console.warn('[WARN] Admin account not found; set ADMIN_PASSWORD to provision it safely');
     }
-  } else {
-    console.log('[INFO] Admin provisioning skipped: set ADMIN_EMAIL and ADMIN_PASSWORD to enable it');
+  } catch (err) {
+    console.warn('Admin account initialization failed:', err.message);
   }
 
   // One-time cleanup: remove the sample/demo listings and demo landlord
