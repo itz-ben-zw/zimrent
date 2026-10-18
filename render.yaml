@@ -55,8 +55,14 @@ services:
       # Google Sign-In token verification (must match js/auth.js client ID).
       - key: GOOGLE_CLIENT_ID
         sync: false
-      # REQUIRED for listing images in production: configure all three Cloudinary values.
-      # The Render filesystem is ephemeral, so local uploads are not a durable fallback.
+      # Preferred persistent image storage. Create a public Supabase Storage bucket named property-images.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: property-images
+      # Optional alternative provider if Supabase Storage is not used.
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY
