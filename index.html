@@ -44,7 +44,7 @@
                 <li><a href="#" id="nav-logout" style="display:none;" onclick="logout(); return false;">Logout</a></li>
                 <li><span id="nav-user-info" style="display:none; font-weight:600; color:var(--primary); cursor:pointer;"></span></li>
             </ul>
-            <button class="menu-toggle" type="button" aria-label="Open navigation menu" aria-expanded="false">Menu</button>
+            <button class="menu-toggle" type="button" aria-label="Open navigation menu" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
         </div>
     </nav>
     <main id="main">
@@ -384,14 +384,29 @@
             });
         }
         
+        // Images are Supabase public URLs (strings); older records may use {data:...}
+        function imgSrc(img) {
+            if (!img) return '';
+            return (typeof img === 'string') ? img : (img.data || '');
+        }
+        // Swap a failed image for the placeholder without wiping the verified tag.
+        function cardImgFallback(el) {
+            if (!el || !el.parentElement) return;
+            const placeholder = document.createElement('div');
+            placeholder.className = 'card-img-placeholder';
+            placeholder.innerHTML = '<i class="fas fa-home" style="font-size:3rem; color:#ccc;"></i>';
+            el.parentElement.insertBefore(placeholder, el);
+            el.remove();
+        }
         function renderCardHTML(l) {
             return `
             <div class="property-card" role="button" tabindex="0" onclick="viewProperty('${l.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();viewProperty('${l.id}');}">
                 <div class="card-img">
                     ${l.images && l.images.length > 0 
-                        ? `<img src="${l.images[0].data}" alt="${escapeHtml(l.title)}">` 
+                        ? `<img src="${imgSrc(l.images[0])}" alt="${escapeHtml(l.title)}" loading="lazy" onerror="cardImgFallback(this)">` 
                         : `<div class="card-img-placeholder"><i class="fas fa-home" style="font-size:3rem; color:#ccc;"></i></div>`
                     }
+                    ${l.status === 'approved' ? '<span class="verified-tag"><i class="fas fa-circle-check"></i> Verified</span>' : ''}
                 </div>
                 <div class="card-body">
                     <div class="card-price">
@@ -402,7 +417,6 @@
                         <i class="fas fa-map-marker-alt" style="color:var(--text-muted);"></i> ${escapeHtml(l.city)}, ${escapeHtml(l.suburb)}
                     </div>
                     <div class="card-amenities">
-                        <span class="amenity-badge yes"><i class="fas fa-check-circle"></i> Verified</span>
                         ${l.solar ? '<span class="amenity-badge yes">Solar</span>' : ''}
                         ${l.borehole ? '<span class="amenity-badge yes">Borehole</span>' : ''}
                         ${l.wifi ? '<span class="amenity-badge yes">Wi-Fi</span>' : ''}
