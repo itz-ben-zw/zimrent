@@ -55,8 +55,8 @@ services:
       # Google Sign-In token verification (must match js/auth.js client ID).
       - key: GOOGLE_CLIENT_ID
         sync: false
-      # Image storage - when set, uploads go to Cloudinary (durable on Render).
-      # Leave blank to fall back to the ephemeral local uploads/ dir.
+      # REQUIRED for listing images in production: configure all three Cloudinary values.
+      # The Render filesystem is ephemeral, so local uploads are not a durable fallback.
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY
