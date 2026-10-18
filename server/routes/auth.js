@@ -220,10 +220,10 @@ router.post('/google', async (req, res) => {
     }
     const info = await resp.json();
     // Token must have been issued for OUR client ID, not another app's.
-    if (!GOOGLE_CLIENT_ID || info.aud !== GOOGLE_CLIENT_ID) {
+    if (!GOOGLE_CLIENT_ID || (info.issued_to !== GOOGLE_CLIENT_ID && info.aud !== GOOGLE_CLIENT_ID)) {
       return res.status(401).json({ error: 'Google token was issued for a different app' });
     }
-    if (!info.sub || !info.email || String(info.email_verified).toLowerCase() !== 'true') {
+    if (!info.sub || !info.email || String(info.email_verified ?? info.verified_email).toLowerCase() !== 'true') {
       return res.status(401).json({ error: 'Google account is missing an email address' });
     }
     googleUser = { sub: info.sub, email: info.email, name: info.name || '', picture: info.picture || '' };
@@ -335,7 +335,7 @@ router.post('/phone/verify', async (req, res) => {
   }
 
   // OTP verified - clear it
-  otpStore.delete(phone);
+  otpStore.delete(cleanPhone);
 
   const db = getDb();
   let user = await db.prepare('SELECT * FROM users WHERE phone = ? AND phone != \'\'').get(cleanPhone);
