@@ -48,7 +48,9 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(morgan('dev'));
-app.use(express.json({ limit: '5mb' }));
+// Listing photos are resized in the browser, but base64 encoding adds overhead.
+// Allow a reasonable multi-photo request while retaining a bounded request size.
+app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // CORS - use FRONTEND_URL env var, default to * for dev
