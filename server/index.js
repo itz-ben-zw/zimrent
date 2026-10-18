@@ -141,6 +141,14 @@ app.use((err, req, res, next) => {
 async function initializeApp() {
   await initDb();
   await runMigration();
+
+  if (process.env.NODE_ENV === 'production' && !(
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET
+  )) {
+    console.warn('[WARN] Cloudinary image storage is not configured. Listing submissions containing images will return 503 until all three CLOUDINARY_* environment variables are set.');
+  }
   
   const db = getDb();
   
