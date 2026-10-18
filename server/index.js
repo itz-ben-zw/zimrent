@@ -76,7 +76,7 @@ app.use((req, res, next) => {
       "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com https://accounts.google.com https://apis.google.com https://www.googletagmanager.com",
       "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com https://accounts.google.com https://fonts.googleapis.com",
       "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:",
-      "img-src 'self' data: blob: https://res.cloudinary.com https://*.tile.openstreetmap.org https://www.gstatic.com https://www.googletagmanager.com",
+      "img-src 'self' data: blob: https://res.cloudinary.com https://*.supabase.co https://*.tile.openstreetmap.org https://www.gstatic.com https://www.googletagmanager.com",
       "connect-src 'self' https://accounts.google.com https://www.google-analytics.com https://region1.google-analytics.com",
       "frame-src https://accounts.google.com",
       "object-src 'none'",
@@ -142,12 +142,14 @@ async function initializeApp() {
   await initDb();
   await runMigration();
 
-  if (process.env.NODE_ENV === 'production' && !(
+  const supabaseStorageConfigured = !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const cloudinaryStorageConfigured = !!(
     process.env.CLOUDINARY_CLOUD_NAME &&
     process.env.CLOUDINARY_API_KEY &&
     process.env.CLOUDINARY_API_SECRET
-  )) {
-    console.warn('[WARN] Cloudinary image storage is not configured. Listing submissions containing images will return 503 until all three CLOUDINARY_* environment variables are set.');
+  );
+  if (process.env.NODE_ENV === 'production' && !supabaseStorageConfigured && !cloudinaryStorageConfigured) {
+    console.warn('[WARN] Persistent image storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY with a public Storage bucket, or configure all three CLOUDINARY_* variables.');
   }
   
   const db = getDb();
