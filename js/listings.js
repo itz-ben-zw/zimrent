@@ -88,6 +88,16 @@ function initListingsPage() {
   document.getElementById('filter-max-price').addEventListener('input', debounce(applyFilters, 500));
   
   document.getElementById('reset-filters').addEventListener('click', resetFilters);
+
+  // Mobile: collapsible filters bar (panel flows horizontally when open)
+  const filtersToggle = document.querySelector('.filters-toggle');
+  const filtersPanel = document.getElementById('filters-panel');
+  if (filtersToggle && filtersPanel) {
+    filtersToggle.addEventListener('click', function () {
+      const open = filtersPanel.classList.toggle('is-open');
+      filtersToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  }
   
   const searchQuery = sessionStorage.getItem('homify_search');
   if (searchQuery) {
@@ -187,6 +197,24 @@ function applyFilters() {
   });
   
   renderListings(filtered);
+  updateFilterCount();
+}
+
+// Update the mobile "Filters" badge with how many filters are active
+function updateFilterCount() {
+  const badge = document.getElementById('filters-count');
+  if (!badge) return;
+  let n = 0;
+  ['filter-suburb', 'filter-bedrooms', 'filter-type', 'filter-currency'].forEach(id => {
+    if (document.getElementById(id).value) n++;
+  });
+  ['filter-wifi', 'filter-electric-stove', 'filter-gas-stove', 'filter-fridge', 'filter-solar', 'filter-borehole', 'filter-fenced'].forEach(id => {
+    if (document.getElementById(id).checked) n++;
+  });
+  if (document.getElementById('filter-min-price').value) n++;
+  if (document.getElementById('filter-max-price').value) n++;
+  badge.textContent = n;
+  badge.hidden = n === 0;
 }
 
 function resetFilters() {
@@ -199,6 +227,7 @@ function resetFilters() {
   document.getElementById('filter-min-price').value = '';
   document.getElementById('filter-max-price').value = '';
   renderListings(currentListings);
+  updateFilterCount();
 }
 
 function imgSrc(img) {

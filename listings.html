@@ -56,10 +56,16 @@
 
     <!-- Main Content -->
     <div class="container">
-        <div style="display:grid; grid-template-columns: 280px 1fr; gap:2rem;">
+        <div class="listings-layout">
             <!-- Sidebar Filters -->
             <aside class="sidebar">
-                <h3 style="margin-bottom:1rem; font-size:1.1rem;"><i class="fas fa-filter" style="color:var(--primary);"></i> Filters</h3>
+                <button type="button" class="filters-toggle" aria-expanded="false" aria-controls="filters-panel">
+                    <span><i class="fas fa-filter" style="color:var(--primary);"></i> Filters<span class="filters-count" id="filters-count" hidden>0</span></span>
+                    <i class="fas fa-chevron-down filters-chevron" aria-hidden="true"></i>
+                </button>
+                <h3 class="filters-title" style="margin-bottom:1rem; font-size:1.1rem;"><i class="fas fa-filter" style="color:var(--primary);"></i> Filters</h3>
+
+                <div class="filters-panel" id="filters-panel">
                 
                 <div class="filter-group">
                     <label>Suburb</label>
@@ -92,7 +98,7 @@
                     </select>
                 </div>
                 
-                <div class="filter-group">
+                <div class="filter-group filter-group--wide">
                     <label>Price Range (per month)</label>
                     <div style="display:flex; gap:0.5rem;">
                         <input type="number" id="filter-min-price" placeholder="Min" min="0" style="width:50%;">
@@ -100,7 +106,7 @@
                     </div>
                 </div>
                 
-                <div class="filter-group">
+                <div class="filter-group filter-group--wide filter-amenities">
                     <label>Amenities</label>
                     <div class="filter-checkbox">
                         <input type="checkbox" id="filter-wifi">
@@ -132,7 +138,8 @@
                     </div>
                 </div>
                 
-                <button class="filter-reset" onclick="resetFilters()">Reset All Filters</button>
+                <button type="button" class="filter-reset" id="reset-filters">Reset All Filters</button>
+                </div><!-- /.filters-panel -->
             </aside>
 
             <!-- Listings Grid -->

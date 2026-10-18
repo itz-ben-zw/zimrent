@@ -1211,3 +1211,110 @@ summary:focus-visible {
 /* Subtle zoom on listing card image hover */
 .card-img img { transition: transform 0.35s ease; }
 .property-card:hover .card-img img { transform: scale(1.05); }
+
+/* Listings layout: filters sidebar + grid */
+.listings-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+}
+
+/* Mobile filters toggle (hidden on desktop) */
+.filters-toggle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .listings-layout {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* Collapsible filters bar at the top */
+  .filters-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+
+  .filters-count {
+    margin-left: 0.4rem;
+    background: var(--primary-dark);
+    color: #fff;
+    border-radius: 999px;
+    padding: 0 0.5rem;
+    font-size: 0.78rem;
+    min-width: 1.2rem;
+    text-align: center;
+  }
+
+  .filters-chevron {
+    transition: transform 0.2s ease;
+    color: var(--text-muted);
+  }
+
+  .filters-toggle[aria-expanded="true"] .filters-chevron {
+    transform: rotate(180deg);
+  }
+
+  .filters-title { display: none; }
+
+  .filters-panel { display: none; }
+
+  /* Open panel: fields flow horizontally (2-up grid) instead of a tall column */
+  .filters-panel.is-open {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .filters-panel .filter-group {
+    margin-bottom: 0;
+  }
+
+  .filter-group--wide {
+    grid-column: 1 / -1;
+  }
+
+  /* Amenity checkboxes become tappable chips laid out across the x-axis */
+  .filter-amenities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .filter-amenities > label {
+    width: 100%;
+    margin-bottom: 0.25rem;
+  }
+
+  .filter-amenities .filter-checkbox {
+    margin-bottom: 0;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface-2);
+    font-size: 0.85rem;
+  }
+
+  .filter-amenities .filter-checkbox:has(input:checked) {
+    border-color: var(--primary);
+    color: var(--primary-light);
+    background: rgba(41, 168, 245, 0.12);
+  }
+
+  .filter-reset {
+    grid-column: 1 / -1;
+  }
+}
