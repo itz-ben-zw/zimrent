@@ -97,23 +97,13 @@ class Statement {
   }
 
   async get(...params) {
-    try {
-      const result = await pool.query(this.sql, params);
-      return restoreCase(result.rows[0]);
-    } catch (e) {
-      console.error('SQL get error:', this.originalSql, params, e.message);
-      return undefined;
-    }
+    const result = await pool.query(this.sql, params);
+    return restoreCase(result.rows[0]);
   }
 
   async all(...params) {
-    try {
-      const result = await pool.query(this.sql, params);
-      return result.rows.map(restoreCase);
-    } catch (e) {
-      console.error('SQL all error:', this.originalSql, params, e.message);
-      return [];
-    }
+    const result = await pool.query(this.sql, params);
+    return result.rows.map(restoreCase);
   }
 
   async run(...params) {
