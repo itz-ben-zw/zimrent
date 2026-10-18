@@ -120,7 +120,7 @@
     <script>
     document.addEventListener('DOMContentLoaded', () => {
       const user = getCurrentUser();
-      if (!user || user.role !== 'landlord') {
+      if (!user || (user.role !== 'landlord' && user.role !== 'admin')) {
         window.location.href = user ? 'listings.html' : 'login.html';
       }
     });

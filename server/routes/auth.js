@@ -41,6 +41,9 @@ function userResponse(user) {
   };
 }
 
+// Reserved admin address - always resolves to the admin account.
+const ADMIN_EMAIL_RESERVED = String(process.env.ADMIN_EMAIL || 'chigodobenji@gmail.com').trim().toLowerCase();
+
 // POST /api/auth/register
 router.post('/register', memoryUpload.single('profileImage'), async (req, res) => {
   const { fullName, email, password, role, phone, username } = req.body;
@@ -113,7 +116,7 @@ router.post('/register', memoryUpload.single('profileImage'), async (req, res) =
     fullName: cleanName,
     email: cleanEmail,
     passwordHash,
-    role: role || 'tenant',
+    role: (cleanEmail === ADMIN_EMAIL_RESERVED) ? 'admin' : (role || 'tenant'),
     phone: cleanPhone || '',
     username: username || null,
     profileImage,
@@ -202,10 +205,6 @@ router.post('/login', async (req, res) => {
 // the server verifies it with Google and trusts ONLY that result. Accepting
 // email/googleId posted by the browser would let anyone sign in as any user.
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '909174371495-l1f3thbsm4fkbidbdtq8igpks1mutj3h.apps.googleusercontent.com';
-// Reserved admin address - Google sign-in as this email always resolves to
-// the admin account and never downgrades it to tenant.
-const ADMIN_EMAIL_RESERVED = String(process.env.ADMIN_EMAIL || 'chigodobenji@gmail.com').trim().toLowerCase();
-
 router.post('/google', async (req, res) => {
   const { accessToken, role } = req.body;
 
