@@ -1152,3 +1152,39 @@ summary:focus-visible {
 }
 .footer-legal a { color: #d6dee6; text-decoration: none; }
 .footer-legal a:hover { color: #fff; text-decoration: underline; }
+/* Property detail page: cover image + thumbnails */
+.detail-hero {
+  position: relative;
+  height: 400px;
+  background: #1a202c;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 0.8rem;
+}
+.detail-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.detail-hero-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+}
+.detail-thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  border: none;
+  transition: all 0.2s;
+}
+.detail-thumb:hover {
+  opacity: 1 !important;
+  transform: scale(1.05);
+}

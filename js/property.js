@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (p.images && p.images.length > 0) {
       hero.innerHTML = '<img src="' + imgSrc(p.images[0]) + '" alt="' + escapeHtml(p.title) + '">';
       thumbs.innerHTML = p.images.map((img, i) => `
-        <img src="${imgSrc(img)}" alt="Image ${i+1}" style="width:90px; height:65px; object-fit:cover; border-radius:6px; cursor:pointer; border:2px solid ${i===0?'var(--primary)':'transparent'};" onclick="document.getElementById('detail-hero').querySelector('img').src='${img.data}'; this.parentElement.querySelectorAll('img').forEach(el=>el.style.borderColor='transparent'); this.style.borderColor='var(--primary)';">
+        <img src="${imgSrc(img)}" alt="Image ${i+1}" style="width:90px; height:65px; object-fit:cover; border-radius:6px; cursor:pointer; border:2px solid ${i===0?'var(--primary)':'transparent'};" onclick="document.getElementById('detail-hero').querySelector('img').src='${imgSrc(img)}'; this.parentElement.querySelectorAll('img').forEach(el=>el.style.borderColor='transparent'); this.style.borderColor='var(--primary)';">
       `).join('');
     } else {
       hero.innerHTML = '<div class="detail-hero-placeholder"><i class="fas fa-home" style="font-size:5rem; color:#ccc;"></i></div>';
