@@ -267,12 +267,12 @@ router.post('/google', async (req, res) => {
 router.post('/phone/send-otp', async (req, res) => {
   const { phone } = req.body;
 
-  if (typeof phone !== 'string' || !/^\\+?[\\d\\s().-]{7,24}$/.test(phone)) {
+  if (typeof phone !== 'string' || !/^\+?[\d\s().-]{7,24}$/.test(phone)) {
     return res.status(400).json({ error: 'Valid phone number is required' });
   }
 
-  const cleanPhone = phone.replace(/[\\s().-]/g, '');
-  if (!/^\\+?\\d{7,15}$/.test(cleanPhone)) {
+  const cleanPhone = phone.replace(/[\s().-]/g, '');
+  if (!/^\+?\d{7,15}$/.test(cleanPhone)) {
     return res.status(400).json({ error: 'Valid phone number is required' });
   }
 
