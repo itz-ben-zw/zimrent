@@ -9,18 +9,29 @@ const isConfigured = !!(
   process.env.SUPABASE_BUCKET
 );
 
+// Lazily create the Supabase client only when first needed. Creating it at
+// module load time would crash on Node.js < 22 (no native WebSocket), which
+// is what Render currently runs. Lazy init avoids that entirely.
 let supabase = null;
-if (isConfigured) {
-  supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+let supabaseInitError = null;
+function getSupabase() {
+  if (supabaseInitError) return null;
+  if (supabase) return supabase;
+  try {
+    supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  } catch (err) {
+    supabaseInitError = err;
+    console.warn('[SUPABASE] Failed to initialize client:', err.message);
+    return null;
+  }
+  return supabase;
 }
 
 // Upload one in-memory multer file buffer to Supabase Storage.
 // Returns the public HTTPS URL that we persist in the database.
 async function uploadBuffer(buffer, folder = 'homify', originalname = 'file') {
-  if (!supabase) {
+  const client = getSupabase();
+  if (!client) {
     throw new Error('Supabase Storage is not configured');
   }
 
@@ -30,7 +41,7 @@ async function uploadBuffer(buffer, folder = 'homify', originalname = 'file') {
     .slice(0, 50);
   const path = `${folder}/${uniqueSuffix}-${safeName}`;
 
-  const { error } = await supabase.storage
+  const { error } = await client.storage
     .from(process.env.SUPABASE_BUCKET)
     .upload(path, buffer, {
       cacheControl: '3600',
@@ -39,7 +50,7 @@ async function uploadBuffer(buffer, folder = 'homify', originalname = 'file') {
 
   if (error) throw error;
 
-  const { data } = supabase.storage
+  const { data } = client.storage
     .from(process.env.SUPABASE_BUCKET)
     .getPublicUrl(path);
 
@@ -53,4 +64,4 @@ async function uploadBuffers(files, folder) {
   );
 }
 
-module.exports = { supabase, isConfigured, uploadBuffer, uploadBuffers };
+module.exports = { supabase: null, isConfigured, uploadBuffer, uploadBuffers };
