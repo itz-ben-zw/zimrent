@@ -80,6 +80,14 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/admin', adminRoutes);
 
+// Clean home URL: internal links use relative "index.html" hrefs (so the site
+// also works straight from disk), but when served we canonicalise
+// /index.html → / so the address bar shows the bare domain. Registered before
+// express.static, which would otherwise serve the file at the .html path.
+app.get('/index.html', (req, res) => {
+  res.redirect(301, '/');
+});
+
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, '..')));
 
