@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
-    "migrate": "node database/migrate.js"
+    "migrate": "node database/migrate.js",
+    "test": "node _e2e_test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
