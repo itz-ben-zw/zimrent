@@ -262,6 +262,13 @@ router.post('/google', async (req, res) => {
     user = await db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
   }
 
+  // Reserved admin address: Google sign-in as this email always resolves to
+  // the admin account and never downgrades it to tenant.
+  if (String(user.email || '').toLowerCase() === ADMIN_EMAIL_RESERVED && user.role !== 'admin') {
+    await db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(user.id);
+    user.role = 'admin';
+  }
+
   if (user.status === 'suspended') {
     return res.status(403).json({ error: 'This account has been suspended. Contact support for help.' });
   }

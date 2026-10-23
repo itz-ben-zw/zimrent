@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const p = data.property;
 
     document.getElementById('breadcrumb-title').textContent = p.title;
-    document.getElementById('detail-title').innerHTML = escapeHtml(p.title) + (p.status === 'approved' ? ' <span class="amenity-badge yes" style="vertical-align:middle; margin-left:0.4rem;"><i class="fas fa-check-circle"></i> Verified by Homify</span>' : '');
+    document.getElementById('detail-title').innerHTML = escapeHtml(p.title) + (p.status === 'approved' ? ' <span class="amenity-badge" style="vertical-align:middle; margin-left:0.4rem; background:rgba(29,155,240,0.14); color:#1d9bf0; border-color:rgba(29,155,240,0.35);"><i class="fas fa-circle-check"></i> Verified by Homify</span>' : '');
     document.getElementById('detail-location').innerHTML = '<i class="fas fa-map-marker-alt" style="color:var(--text-muted);"></i> ' + escapeHtml(p.city) + ', ' + escapeHtml(p.suburb);
     document.getElementById('detail-price').innerHTML = '<span style="font-weight:700; color:var(--primary); font-size:1.3rem;">' + p.currency + ' ' + p.price.toLocaleString() + '</span><span style="color:var(--text-muted);">/month</span>';
     document.getElementById('detail-description').textContent = p.description || 'No description provided.';
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (p.images && p.images.length > 0) {
       hero.innerHTML = '<img src="' + imgSrc(p.images[0]) + '" alt="' + escapeHtml(p.title) + '">';
       thumbs.innerHTML = p.images.map((img, i) => `
-        <img src="${imgSrc(img)}" alt="Image ${i+1}" style="width:90px; height:65px; object-fit:cover; border-radius:6px; cursor:pointer; border:2px solid ${i===0?'var(--primary)':'transparent'};" onclick="document.getElementById('detail-hero').querySelector('img').src='${img.data}'; this.parentElement.querySelectorAll('img').forEach(el=>el.style.borderColor='transparent'); this.style.borderColor='var(--primary)';">
+        <img src="${imgSrc(img)}" alt="Image ${i+1}" style="width:90px; height:65px; object-fit:cover; border-radius:6px; cursor:pointer; border:2px solid ${i===0?'var(--primary)':'transparent'};" onclick="document.getElementById('detail-hero').querySelector('img').src='${imgSrc(img)}'; this.parentElement.querySelectorAll('img').forEach(el=>el.style.borderColor='transparent'); this.style.borderColor='var(--primary)';">
       `).join('');
     } else {
       hero.innerHTML = '<div class="detail-hero-placeholder"><i class="fas fa-home" style="font-size:5rem; color:#ccc;"></i></div>';

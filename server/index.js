@@ -107,6 +107,14 @@ app.use('/api/favorites', favoriteRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/admin', adminRoutes);
 
+// Clean home URL: internal links use relative "index.html" hrefs (so the site
+// also works straight from disk), but when served we canonicalise
+// /index.html → / so the address bar shows the bare domain. Registered before
+// express.static, which would otherwise serve the file at the .html path.
+app.get('/index.html', (req, res) => {
+  res.redirect(301, '/');
+});
+
 // Serve static frontend files
 // Do not expose backend source, configuration, or repository metadata through
 // the frontend static-file handler.

@@ -40,12 +40,20 @@ async function main() {
   let r = await req('POST', '/api/auth/register', { body: {
     fullName: 'E2E Test Landlord', email: llEmail, password: 'Test1234!', role: 'landlord' } });
   check('register landlord', r.res.status === 201 || r.res.status === 200, JSON.stringify(r.data));
+  if (r.data && r.data.verifyToken) {
+    const vr = await req('POST', `/api/auth/verify-email/${encodeURIComponent(r.data.verifyToken)}`);
+    check('verify landlord email', vr.res.status === 200, JSON.stringify(vr.data));
+  }
   const llToken = r.data && r.data.token;
   const llId = r.data && r.data.user && r.data.user.id;
 
   r = await req('POST', '/api/auth/register', { body: {
     fullName: 'E2E Test Student', email: stEmail, password: 'Test1234!', role: 'tenant' } });
   check('register student', r.res.status === 201 || r.res.status === 200, JSON.stringify(r.data));
+  if (r.data && r.data.verifyToken) {
+    const vr = await req('POST', `/api/auth/verify-email/${encodeURIComponent(r.data.verifyToken)}`);
+    check('verify student email', vr.res.status === 200, JSON.stringify(vr.data));
+  }
   const stToken = r.data && r.data.token;
 
   r = await req('POST', '/api/auth/login', { body: {
@@ -188,4 +196,3 @@ async function main() {
 }
 
 main().catch(e => { console.error('E2E fatal:', e); process.exit(1); });
-

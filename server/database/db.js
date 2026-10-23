@@ -39,7 +39,8 @@ const CAMEL_CASE_COLUMNS = [
   'favId', 'favoritedAt', 'landlordEmail', 'landlordName', 'propertyCity',
   'propertySuburb', 'propertyTitle', 'receiverEmail', 'receiverName',
   'senderEmail', 'senderName', 'tenantEmail', 'tenantName', 'tenantPhone',
-  'electricStove', 'gasStove', 'verifiedAt', 'rejectReason', 'reporterId'
+  'electricStove', 'gasStove', 'verifiedAt', 'rejectReason', 'reporterId',
+  'reporterName'
 ];
 const CASE_MAP = Object.fromEntries(CAMEL_CASE_COLUMNS.map(c => [c.toLowerCase(), c]));
 

@@ -110,6 +110,7 @@ button { cursor: pointer; font-family: inherit; }
     background: var(--primary-dark);
     color: white !important;
     padding: 0.5rem 1.2rem !important;
+    white-space: nowrap;
 }
 
 .nav-cta:hover { background: #1a5fb0; }
@@ -170,7 +171,7 @@ button { cursor: pointer; font-family: inherit; }
 }
 
 .tilting {
-    box-shadow: 0 18px 44px rgba(41, 168, 245, 0.35) !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -509,23 +510,27 @@ button { cursor: pointer; font-family: inherit; }
     border: 1px solid var(--border);
 }
 
-.amenity-badge.yes { background: rgba(46,204,113,0.14); color: #2ecc71; border-color: rgba(46,204,113,0.35); }
+.amenity-badge.yes {
+    background: rgba(41, 168, 245, 0.12);
+    color: var(--primary-light);
+    border-color: rgba(41, 168, 245, 0.35);
+}
 .amenity-badge.no { background: rgba(255,107,107,0.12); color: #ff9d9d; border-color: rgba(255,107,107,0.3); }
 
 .card-action {
     display: block;
     width: 100%;
     text-align: center;
-    background: var(--brand-gradient);
+    background: var(--primary-dark);
     color: white;
     border: none;
     padding: 0.6rem;
     border-radius: var(--radius-sm);
     font-weight: 600;
-    transition: filter 0.2s;
+    transition: background 0.2s;
 }
 
-.card-action:hover { filter: brightness(1.08); }
+.card-action:hover { background: #1a5fb0; }
 
 /* Filters Sidebar */
 .sidebar {
@@ -587,10 +592,10 @@ button { cursor: pointer; font-family: inherit; }
 }
 
 .btn-primary {
-    background: var(--brand-gradient);
+    background: var(--primary-dark);
     color: white;
 }
-.btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.btn-primary:hover { background: #1a5fb0; transform: translateY(-1px); }
 
 .btn-secondary { background: var(--primary-dark); color: white; }
 .btn-secondary:hover { background: #1a5fb0; }
@@ -1152,3 +1157,200 @@ summary:focus-visible {
 }
 .footer-legal a { color: #d6dee6; text-decoration: none; }
 .footer-legal a:hover { color: #fff; text-decoration: underline; }
+/* Property detail page: cover image + thumbnails */
+.detail-hero {
+  position: relative;
+  height: 400px;
+  background: #1a202c;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 0.8rem;
+}
+.detail-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.detail-hero-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+}
+.detail-thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  border: none;
+  transition: all 0.2s;
+}
+.detail-thumb:hover {
+  opacity: 1 !important;
+  transform: scale(1.05);
+}
+/* Blue verified tag overlaid on listing card images */
+.verified-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.95);
+  color: #1d9bf0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.65rem;
+  border-radius: 50px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+.verified-tag i { color: #1d9bf0; font-size: 0.85rem; }
+/* Subtle zoom on listing card image hover */
+.card-img img { transition: transform 0.35s ease; }
+.property-card:hover .card-img img { transform: scale(1.05); }
+
+/* Listings layout: filters sidebar + grid */
+.listings-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+}
+
+/* Mobile filters toggle (hidden on desktop) */
+.filters-toggle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .listings-layout {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* Collapsible filters bar at the top */
+  .filters-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+
+  .filters-count {
+    margin-left: 0.4rem;
+    background: var(--primary-dark);
+    color: #fff;
+    border-radius: 999px;
+    padding: 0 0.5rem;
+    font-size: 0.78rem;
+    min-width: 1.2rem;
+    text-align: center;
+  }
+
+  .filters-chevron {
+    transition: transform 0.2s ease;
+    color: var(--text-muted);
+  }
+
+  .filters-toggle[aria-expanded="true"] .filters-chevron {
+    transform: rotate(180deg);
+  }
+
+  .filters-title { display: none; }
+
+  .filters-panel { display: none; }
+
+  /* Open panel: fields flow horizontally (2-up grid) instead of a tall column */
+  .filters-panel.is-open {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .filters-panel .filter-group {
+    margin-bottom: 0;
+  }
+
+  .filter-group--wide {
+    grid-column: 1 / -1;
+  }
+
+  /* Amenity checkboxes become tappable chips laid out across the x-axis */
+  .filter-amenities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .filter-amenities > label {
+    width: 100%;
+    margin-bottom: 0.25rem;
+  }
+
+  .filter-amenities .filter-checkbox {
+    margin-bottom: 0;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface-2);
+    font-size: 0.85rem;
+  }
+
+  .filter-amenities .filter-checkbox:has(input:checked) {
+    border-color: var(--primary);
+    color: var(--primary-light);
+    background: rgba(41, 168, 245, 0.12);
+  }
+
+  .filter-reset {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Wide screens: listings page containers grow beyond 1200px so the card
+   grid can show 3-4 columns on large monitors (nav grows with it). */
+@media (min-width: 1440px) {
+  body.page-listings .container,
+  body.page-listings .nav-inner {
+    max-width: 1700px;
+  }
+}
+
+/* Nav logo mark: Homify icon left of the wordmark.
+   Spacing sits on the image (not flex gap) so the "Homi"+<span>fy</span>
+   text runs stay one uninterrupted word. */
+.nav-brand {
+    display: inline-flex;
+    align-items: center;
+}
+
+.logo-mark {
+    margin-right: 0.5rem;
+    height: 34px;
+    width: auto;
+    border-radius: 9px;
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .logo-mark {
+        height: 26px;
+        border-radius: 7px;
+    }
+}

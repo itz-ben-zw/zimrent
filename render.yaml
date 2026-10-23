@@ -11,7 +11,7 @@ services:
     autoDeploy: true
     envVars:
       - key: NODE_VERSION
-        value: 20.18.0
+        value: 22
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
@@ -55,17 +55,11 @@ services:
       # Google Sign-In token verification (must match js/auth.js client ID).
       - key: GOOGLE_CLIENT_ID
         sync: false
-      # Preferred persistent image storage. Create a public Supabase Storage bucket named property-images.
+      # Image storage - when set, uploads go to Supabase Storage (durable on Render).
+      # Leave blank to fall back to the ephemeral local uploads/ dir.
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: SUPABASE_STORAGE_BUCKET
-        value: property-images
-      # Optional alternative provider if Supabase Storage is not used.
-      - key: CLOUDINARY_CLOUD_NAME
-        sync: false
-      - key: CLOUDINARY_API_KEY
-        sync: false
-      - key: CLOUDINARY_API_SECRET
+      - key: SUPABASE_BUCKET
         sync: false

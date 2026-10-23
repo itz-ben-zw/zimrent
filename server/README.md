@@ -1,6 +1,6 @@
 # Homify Backend
 
-Full-stack property rental platform backend built with Node.js + Express + SQLite.
+Full-stack property rental platform backend built with Node.js + Express + PostgreSQL.
 
 ## Quick Start
 
@@ -8,15 +8,29 @@ Full-stack property rental platform backend built with Node.js + Express + SQLit
 cd server
 npm install
 cp .env.example .env   # or create .env manually
-npm run migrate        # create database tables
+npm run migrate        # create or update database tables
 npm start              # start server on http://localhost:3001
 ```
+
+For local PostgreSQL, create a database and role, then set `DATABASE_URL` in
+`.env`, for example:
+
+```bash
+sudo -u postgres createuser --createdb zimrent_test
+sudo -u postgres createdb --owner=zimrent_test zimrent_test
+DATABASE_URL=postgresql://zimrent_test:password@127.0.0.1:5432/zimrent_test
+```
+
+The migration command now initializes the configured PostgreSQL connection and
+can be run independently of the server. Never commit `.env` or production
+database credentials.
 
 ## Environment Variables
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `PORT` | No | `3001` | Server port |
+| `DATABASE_URL` | **Yes** | - | PostgreSQL connection string |
 | `JWT_SECRET` | **Yes** | - | Secret for JWT signing |
 | `JWT_EXPIRES_IN` | No | `7d` | Token expiry |
 | `UPLOAD_DIR` | No | `../uploads` | Image upload folder |
@@ -29,10 +43,16 @@ npm start              # start server on http://localhost:3001
 - `npm start` - run server
 - `npm run dev` - run with auto-reload
 - `npm run migrate` - run database migrations
+- `npm test` - run the end-to-end verification suite against a running server
+
+GitHub Actions runs `npm test` on every push and pull request using a fresh
+PostgreSQL 16 service. The workflow is defined in
+`.github/workflows/test.yml`.
 
 ## Database
 
-Uses `sql.js` (SQLite in browser/Node). The database file is created at `server/homify.db`.
+Uses PostgreSQL through the `pg` package. The schema is in `database/schema.sql`
+and is applied by `npm run migrate` or automatically during server startup.
 
 ### Schema
 

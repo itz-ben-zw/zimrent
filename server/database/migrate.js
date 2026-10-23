@@ -1,6 +1,7 @@
+require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const { getDb } = require('./db');
+const { initDb, getDb } = require('./db');
 
 const SCHEMA_PATH = path.join(__dirname, 'schema.sql');
 
@@ -36,3 +37,14 @@ async function runMigration() {
 }
 
 module.exports = runMigration;
+
+// Allow `npm run migrate` to run the migration as a standalone command.
+if (require.main === module) {
+  initDb()
+    .then(runMigration)
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error('Migration failed:', err.message);
+      process.exit(1);
+    });
+}

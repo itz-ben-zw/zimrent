@@ -68,12 +68,29 @@ function initListingsPage() {
     populateBedrooms();
     populatePropertyTypes();
     populateCurrencies();
+    // Own the full, unfiltered result set here. renderListings() must never
+    // reassign it — if it did, the first applyFilters() call would shrink it
+    // to the filtered subset, so later filter changes and resetFilters()
+    // would operate on damaged data (e.g. swapping suburbs gave 0 results).
+    currentListings = listings;
     renderListings(listings);
+    // Apply the home-page hero search only now: the suburb/bedroom <select>s
+    // get their options from populate*() above and currentListings must be
+    // filled. Running this synchronously at page load (as this used to) matched
+    // against empty selects with an empty list, so the search was silently
+    // dropped and every listing was rendered instead.
+    applyStoredHeroSearch();
   }).catch(err => {
     console.error('Failed to load listings:', err);
+    renderListings([]);
   });
   
-  document.getElementById('filter-suburb').addEventListener('change', applyFilters);
+  document.getElementById('filter-suburb').addEventListener('change', function () {
+    // Picking a real suburb (or All Suburbs) supersedes a hero-search text
+    // filter; drop its temporary option so the dropdown stays truthful.
+    if (this.value !== HERO_SUBURB_SENTINEL) clearHeroSuburbQuery();
+    applyFilters();
+  });
   document.getElementById('filter-bedrooms').addEventListener('change', applyFilters);
   document.getElementById('filter-type').addEventListener('change', applyFilters);
   document.getElementById('filter-currency').addEventListener('change', applyFilters);
@@ -88,20 +105,17 @@ function initListingsPage() {
   document.getElementById('filter-max-price').addEventListener('input', debounce(applyFilters, 500));
   
   document.getElementById('reset-filters').addEventListener('click', resetFilters);
-  
-  const searchQuery = sessionStorage.getItem('homify_search');
-  if (searchQuery) {
-    sessionStorage.removeItem('homify_search');
-    const query = JSON.parse(searchQuery);
-    if (query.suburb) {
-      // Match the typed suburb against known options (case-insensitive)
-      const suburbSelect = document.getElementById('filter-suburb');
-      const match = Array.from(suburbSelect.options).find(o => o.value && o.value.toLowerCase() === query.suburb.toLowerCase());
-      if (match) suburbSelect.value = match.value;
-    }
-    document.getElementById('filter-bedrooms').value = query.bedrooms || '';
-    applyFilters();
+
+  // Mobile: collapsible filters bar (panel flows horizontally when open)
+  const filtersToggle = document.querySelector('.filters-toggle');
+  const filtersPanel = document.getElementById('filters-panel');
+  if (filtersToggle && filtersPanel) {
+    filtersToggle.addEventListener('click', function () {
+      const open = filtersPanel.classList.toggle('is-open');
+      filtersToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
   }
+  
 }
 
 function populateSuburbs() {
@@ -152,6 +166,102 @@ function populateCurrencies() {
   });
 }
 
+// Sentinel <option> value used when a hero search doesn't exactly match a
+// known suburb; applyFilters() then loose-matches heroSuburbQuery per listing.
+const HERO_SUBURB_SENTINEL = '__hero_suburb__';
+// Raw suburb text typed into the home-page hero (empty when not searching).
+let heroSuburbQuery = '';
+
+// Consume the search index.html stored in sessionStorage and apply it to the
+// filter controls. Call this only after populate*() (so the <select>s have
+// options) and after currentListings is set — doing it earlier, before the
+// fetch resolved, was why hero searches ended up showing every listing.
+function applyStoredHeroSearch() {
+  const raw = sessionStorage.getItem('homify_search');
+  if (!raw) return;
+  sessionStorage.removeItem('homify_search');
+  let query = {};
+  try {
+    query = JSON.parse(raw) || {};
+  } catch (e) {
+    query = {};
+  }
+
+  if (query.suburb) {
+    const typed = String(query.suburb).trim();
+    const suburbSelect = document.getElementById('filter-suburb');
+    // Exact match against a known dropdown value → keep the normal exact
+    // filter path (the dropdown value drives applyFilters()).
+    const exact = Array.from(suburbSelect.options)
+      .find(o => o.value && o.value.toLowerCase() === typed.toLowerCase());
+    if (exact) {
+      suburbSelect.value = exact.value;
+    } else {
+      // Not an exact dropdown value: filter loosely on the suburb field only
+      // (covers partial names, typos like "selborne" for "Selbourne Park",
+      // and suburbs missing from the static list entirely).
+      heroSuburbQuery = typed;
+      const opt = document.createElement('option');
+      opt.value = HERO_SUBURB_SENTINEL;
+      opt.textContent = typed + ' (matches)';
+      suburbSelect.appendChild(opt);
+      suburbSelect.value = HERO_SUBURB_SENTINEL;
+    }
+  }
+  if (query.bedrooms) {
+    document.getElementById('filter-bedrooms').value = String(query.bedrooms);
+  }
+  applyFilters();
+}
+
+// Remove the temporary hero-search option and forget its text, so the
+// dropdown goes back to driving exact filtering only.
+function clearHeroSuburbQuery() {
+  heroSuburbQuery = '';
+  const select = document.getElementById('filter-suburb');
+  if (!select) return;
+  for (let i = select.options.length - 1; i >= 0; i--) {
+    if (select.options[i].value === HERO_SUBURB_SENTINEL) select.remove(i);
+  }
+}
+
+// Levenshtein edit distance for short strings (suburb names).
+function editDistance(a, b) {
+  const m = a.length;
+  const n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  let prev = new Array(n + 1);
+  let cur = new Array(n + 1);
+  for (let j = 0; j <= n; j++) prev[j] = j;
+  for (let i = 1; i <= m; i++) {
+    cur[0] = i;
+    for (let j = 1; j <= n; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = cur.slice();
+  }
+  return prev[n];
+}
+
+// Case-insensitive loose match of a listing's suburb against typed search
+// text. Checks the suburb field ONLY — never title, address or description —
+// so a search can only ever surface matching suburbs. Handles exact names,
+// prefixes ("riverside" → "Riverside South"), longer typed words inside the
+// name ("park" → "Queens Park") and small typos ("selborne" → "Selbourne").
+function suburbMatchesQuery(suburb, query) {
+  const s = String(suburb || '').toLowerCase().trim();
+  const q = String(query || '').toLowerCase().trim();
+  if (!q) return true;
+  if (!s) return false;
+  if (s === q || s.startsWith(q)) return true;
+  if (q.length >= 3 && s.includes(q)) return true;
+  if (q.length < 5) return false;
+  // Typo tolerance: compare the query with the whole name and with its first
+  // word, so "selborne" still finds "Selbourne Park" (first word, distance 1).
+  return editDistance(s, q) <= 2 || editDistance(s.split(/\s+/)[0], q) <= 2;
+}
+
 let currentListings = [];
 
 function applyFilters() {
@@ -170,7 +280,11 @@ function applyFilters() {
   const maxPrice = parseFloat(document.getElementById('filter-max-price').value) || Infinity;
   
   const filtered = currentListings.filter(l => {
-    if (suburb && l.suburb !== suburb) return false;
+    if (suburb === HERO_SUBURB_SENTINEL) {
+      if (!suburbMatchesQuery(l.suburb, heroSuburbQuery)) return false;
+    } else if (suburb && String(l.suburb || '').toLowerCase() !== suburb.toLowerCase()) {
+      return false;
+    }
     if (bedrooms && l.bedrooms < parseInt(bedrooms)) return false;
     if (type && l.type !== type) return false;
     if (currency && l.currency !== currency) return false;
@@ -187,10 +301,29 @@ function applyFilters() {
   });
   
   renderListings(filtered);
+  updateFilterCount();
+}
+
+// Update the mobile "Filters" badge with how many filters are active
+function updateFilterCount() {
+  const badge = document.getElementById('filters-count');
+  if (!badge) return;
+  let n = 0;
+  ['filter-suburb', 'filter-bedrooms', 'filter-type', 'filter-currency'].forEach(id => {
+    if (document.getElementById(id).value) n++;
+  });
+  ['filter-wifi', 'filter-electric-stove', 'filter-gas-stove', 'filter-fridge', 'filter-solar', 'filter-borehole', 'filter-fenced'].forEach(id => {
+    if (document.getElementById(id).checked) n++;
+  });
+  if (document.getElementById('filter-min-price').value) n++;
+  if (document.getElementById('filter-max-price').value) n++;
+  badge.textContent = n;
+  badge.hidden = n === 0;
 }
 
 function resetFilters() {
   document.getElementById('filter-suburb').value = '';
+  clearHeroSuburbQuery();
   document.getElementById('filter-bedrooms').value = '';
   document.getElementById('filter-type').value = '';
   document.getElementById('filter-currency').value = '';
@@ -199,11 +332,24 @@ function resetFilters() {
   document.getElementById('filter-min-price').value = '';
   document.getElementById('filter-max-price').value = '';
   renderListings(currentListings);
+  updateFilterCount();
 }
 
 function imgSrc(img) {
   if (!img) return '';
   return (typeof img === 'string') ? img : (img.data || '');
+}
+
+// If a listing image fails to load (bad URL, deleted object), swap in the
+// generic placeholder instead of leaving a broken-image icon + alt text.
+// Only the <img> is removed so the overlaid verified tag survives.
+function cardImgFallback(el) {
+  if (!el || !el.parentElement) return;
+  const placeholder = document.createElement('div');
+  placeholder.className = 'card-img-placeholder';
+  placeholder.innerHTML = '<i class="fas fa-home" style="font-size:3rem; color:#ccc;"></i>';
+  el.parentElement.insertBefore(placeholder, el);
+  el.remove();
 }
 
 function renderListings(listings) {
@@ -225,14 +371,14 @@ function renderListings(listings) {
     return;
   }
   
-  currentListings = listings;
   grid.innerHTML = listings.map(l => `
     <div class="property-card" role="button" tabindex="0" onclick="viewProperty('${l.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();viewProperty('${l.id}');}">
       <div class="card-img">
         ${l.images && l.images.length > 0 
-          ? `<img src="${imgSrc(l.images[0])}" alt="${escapeHtml(l.title)}">` 
+          ? `<img src="${imgSrc(l.images[0])}" alt="${escapeHtml(l.title)}" loading="lazy" onerror="cardImgFallback(this)">` 
           : `<div class="card-img-placeholder"><i class="fas fa-home" style="font-size:3rem; color:#ccc;"></i></div>`
         }
+        ${l.status === 'approved' ? '<span class="verified-tag"><i class="fas fa-circle-check"></i> Verified</span>' : ''}
       </div>
       <div class="card-body">
         <div class="card-price">
@@ -243,7 +389,6 @@ function renderListings(listings) {
           <i class="fas fa-map-marker-alt" style="color:var(--text-muted);"></i> ${escapeHtml(l.city)}, ${escapeHtml(l.suburb)}
       </div>
       <div class="card-amenities">
-          ${l.status === 'approved' ? '<span class="amenity-badge yes"><i class="fas fa-check-circle"></i> Verified</span>' : ''}
           ${l.solar ? '<span class="amenity-badge yes">Solar</span>' : ''}
           ${l.borehole ? '<span class="amenity-badge yes">Borehole</span>' : ''}
           ${l.wifi ? '<span class="amenity-badge yes">Wi-Fi</span>' : ''}

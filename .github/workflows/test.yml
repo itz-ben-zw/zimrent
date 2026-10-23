@@ -1,0 +1,88 @@
+name: Backend tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: PostgreSQL E2E tests
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://zimrent_test:zimrent_test_local_only@127.0.0.1:5432/zimrent_test
+      PORT: 3001
+      JWT_SECRET: ci-only-zimrent-secret
+      JWT_EXPIRES_IN: 7d
+      ADMIN_EMAIL: admin@homify.co.zw
+      ADMIN_PASSWORD: Admin@12345
+      FRONTEND_URL: http://localhost:3001
+      SMS_PROVIDER: console
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: zimrent_test
+          POSTGRES_PASSWORD: zimrent_test_local_only
+          POSTGRES_DB: zimrent_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U zimrent_test -d zimrent_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Run database migration
+        working-directory: server
+        run: npm run migrate
+
+      - name: Start backend
+        working-directory: server
+        run: |
+          npm start > /tmp/zimrent-server.log 2>&1 &
+          echo $! > /tmp/zimrent-server.pid
+
+      - name: Wait for backend
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3001/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/zimrent-server.log
+          exit 1
+
+      - name: Run E2E tests
+        working-directory: server
+        run: npm test
+
+      - name: Show backend log on failure
+        if: failure()
+        run: cat /tmp/zimrent-server.log
+
+      - name: Stop backend
+        if: always()
+        run: |
+          if [ -f /tmp/zimrent-server.pid ]; then
+            kill "$(cat /tmp/zimrent-server.pid)" || true
+          fi
