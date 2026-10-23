@@ -150,14 +150,13 @@ async function initializeApp() {
   await initDb();
   await runMigration();
 
-  const supabaseStorageConfigured = !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
-  const cloudinaryStorageConfigured = !!(
-    process.env.CLOUDINARY_CLOUD_NAME &&
-    process.env.CLOUDINARY_API_KEY &&
-    process.env.CLOUDINARY_API_SECRET
+  const supabaseStorageConfigured = !!(
+    process.env.SUPABASE_URL &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY &&
+    process.env.SUPABASE_BUCKET
   );
-  if (process.env.NODE_ENV === 'production' && !supabaseStorageConfigured && !cloudinaryStorageConfigured) {
-    console.warn('[WARN] Persistent image storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY with a public Storage bucket, or configure all three CLOUDINARY_* variables.');
+  if (process.env.NODE_ENV === 'production' && !supabaseStorageConfigured) {
+    console.warn('[WARN] Persistent image storage is not configured. Set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and SUPABASE_BUCKET for Supabase Storage.');
   }
   
   const db = getDb();
