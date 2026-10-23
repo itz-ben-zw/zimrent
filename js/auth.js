@@ -221,6 +221,12 @@ function resetPhoneLogin() {
 // See GOOGLE_SETUP.md for full setup steps.
 function handleGoogleLogin() {
   const GOOGLE_CLIENT_ID = '909174371495-l1f3thbsm4fkbidbdtq8igpks1mutj3h.apps.googleusercontent.com';
+  // Let users choose whether they are looking for accommodation or listing a property.
+  // The register page already has this selector; login page provides the same choice.
+  const roleSelector = document.getElementById('google-account-role');
+  const registerRoleSelector = document.getElementById('reg-role');
+  const requestedRole = (roleSelector && roleSelector.value) ||
+    (registerRoleSelector && registerRoleSelector.value) || 'tenant';
   if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes('YOUR_GOOGLE_CLIENT_ID')) {
     showError('Google Sign-In is not configured yet. Please use Email or Phone login.');
     return;
@@ -248,12 +254,10 @@ function handleGoogleLogin() {
       // Send the access token to our backend; it verifies the token with
       // Google and only then creates the session (never trust profile data
       // posted straight from the browser).
-      const roleEl = document.querySelector('input[name="google-role"]:checked');
-      const role = roleEl ? roleEl.value : 'tenant';
       fetch(`${API}/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accessToken: response.access_token, role })
+        body: JSON.stringify({ accessToken: response.access_token, role: requestedRole })
       })
       .then(r => r.json())
       .then(data => {

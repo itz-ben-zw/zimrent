@@ -25,15 +25,12 @@
 <body>
     <a class="skip-link" href="#main">Skip to main content</a>
     <nav class="navbar">
-        <div class="nav-inner">
-            <a href="index.html" class="nav-brand"><img src="assets/logo.png" alt="" class="logo-mark">Homi<span>fy</span></a>
-            <ul class="nav-links">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="listings.html">Browse</a></li>
-                <li><a href="register.html" id="nav-register">Register</a></li>
-            </ul>
-        
-        </div>
+        <a href="index.html" class="nav-brand">Homi<span>fy</span></a>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="listings.html">Browse</a></li>
+            <li><a href="register.html" id="nav-register">Register</a></li>
+        </ul>
     </nav>
     <main id="main">
     <div class="container" style="max-width:450px; margin-top:2.5rem;">
@@ -91,14 +88,13 @@
 
             <!-- Social / Google Login -->
             <div class="auth-panel" id="panel-social" style="display:none; text-align:center;">
-                <p style="color:var(--text-muted); margin-bottom:1.5rem;">Sign in with your social account</p>
-                <div style="margin-bottom:1rem;">
-                    <label style="font-size:0.85rem; color:var(--text); margin-right:1rem; cursor:pointer;">
-                        <input type="radio" name="google-role" value="tenant" checked style="margin-right:0.4rem;"> Tenant
-                    </label>
-                    <label style="font-size:0.85rem; color:var(--text); cursor:pointer;">
-                        <input type="radio" name="google-role" value="landlord" style="margin-right:0.4rem;"> Landlord
-                    </label>
+                <p style="color:var(--text-muted); margin-bottom:1rem;">Continue with Google as:</p>
+                <div class="form-group" style="text-align:left; margin-bottom:1rem;">
+                    <label for="google-account-role">I want to</label>
+                    <select id="google-account-role" class="form-control">
+                        <option value="tenant">Look for accommodation (Tenant)</option>
+                        <option value="landlord">List my property (Landlord)</option>
+                    </select>
                 </div>
                 <button id="google-login-btn" class="btn btn-lg" style="width:100%; background:#fff; border:1px solid var(--border); color:#1f2937; display:flex; align-items:center; justify-content:center; gap:0.8rem; padding:0.8rem;" onclick="handleGoogleLogin()">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:22px; height:22px;" alt="Google">

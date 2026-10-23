@@ -190,26 +190,43 @@ router.post('/', authenticate, requireVerifiedEmail, authorize('landlord', 'admi
     }
   }
 
-  // Also accept base64 image data URLs sent in the JSON body. The frontend
-  // reads files as DataURLs and POSTs them as application/json, not
-  // multipart/form-data, so req.files is empty. Convert each data URL to a
-  // buffer and run it through the same Cloudinary / disk pipeline.
-  if (!images.length && Array.isArray(req.body.images)) {
-    const fakeFiles = req.body.images.map((dataUrl, i) => {
-      const match = String(dataUrl).match(/^data:image\/(\w+);base64,/);
-      const ext = match ? match[1] : 'jpg';
-      const base64 = String(dataUrl).replace(/^data:image\/\w+;base64,/, '');
-      return {
-        buffer: Buffer.from(base64, 'base64'),
-        originalname: `image-${i}.${ext}`
-      };
-    });
+  // The browser sends resized image data URLs in JSON. Validate each image
+  // before decoding so malformed payloads cannot silently become empty files.
+  if (!images.length && Array.isArray(req.body.images) && req.body.images.length) {
+    if (req.body.images.length > 10) {
+      return res.status(400).json({ error: 'A listing can have a maximum of 10 images.' });
+    }
+
+    const fakeFiles = [];
+    for (let i = 0; i < req.body.images.length; i++) {
+      const dataUrl = req.body.images[i];
+      if (typeof dataUrl !== 'string') {
+        return res.status(400).json({ error: 'One of the listing images has an invalid format. Please remove it and upload it again.' });
+      }
+      const match = dataUrl.match(/^data:image\/(jpeg|jpg|png|gif|webp);base64,([A-Za-z0-9+/=\r\n]+)$/i);
+      if (!match) {
+        return res.status(400).json({ error: 'One of the listing images could not be read. Please upload the image again.' });
+      }
+      const base64 = match[2].replace(/\s/g, '');
+      if (base64.length > 7 * 1024 * 1024) {
+        return res.status(413).json({ error: 'Each image must be smaller than 5 MB after processing. Please use a smaller image.' });
+      }
+      const buffer = Buffer.from(base64, 'base64');
+      if (!buffer.length || buffer.length > 5 * 1024 * 1024) {
+        return res.status(400).json({ error: 'One of the listing images is empty or too large. Please upload a smaller image.' });
+      }
+      fakeFiles.push({
+        buffer,
+        originalname: `image-${i}.${match[1].toLowerCase()}`
+      });
+    }
+
     try {
       images = await storeImages(fakeFiles, 'homify/properties');
     } catch (err) {
       console.error('Image upload failed:', err);
       if (err && err.message && err.message.includes('Image storage is not configured')) {
-        return res.status(503).json({ error: 'Image uploads are temporarily unavailable (storage not configured). Please try again later.' });
+        return res.status(503).json({ error: 'Image uploads are temporarily unavailable because image storage is not configured. Please contact the site administrator.' });
       }
       return res.status(500).json({ error: 'Image upload failed. Please try again.' });
     }

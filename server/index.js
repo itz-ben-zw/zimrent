@@ -1,5 +1,32 @@
 require('dotenv').config();
 const express = require('express');
+
+// Express 4 does not forward rejected async route handlers to error middleware.
+// Wrap route callbacks on each router instance so async DB/network failures
+// reach the final error handler instead of becoming unhandled rejections.
+const OriginalRouter = express.Router;
+express.Router = function (...args) {
+  const router = OriginalRouter(...args);
+  for (const method of ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'all']) {
+    const original = router[method];
+    if (typeof original !== 'function' || original.__asyncWrapped) continue;
+    const wrapped = function (...routeArgs) {
+      return original.apply(this, routeArgs.map(handler => {
+        if (typeof handler !== 'function') return handler;
+        if (handler.length === 4) {
+          return function (err, req, res, next) { return handler(err, req, res, next); };
+        }
+        return function (req, res, next) {
+          return Promise.resolve(handler(req, res, next)).catch(next);
+        };
+      }));
+    };
+    wrapped.__asyncWrapped = true;
+    router[method] = wrapped;
+  }
+  return router;
+};
+express.Router.prototype = OriginalRouter.prototype;
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
@@ -13,7 +40,6 @@ const authRoutes = require('./routes/auth');
 const propertyRoutes = require('./routes/properties');
 const applicationRoutes = require('./routes/applications');
 const favoriteRoutes = require('./routes/favorites');
-const messageRoutes = require('./routes/messages');
 const conversationRoutes = require('./routes/conversations');
 const adminRoutes = require('./routes/admin');
 
@@ -22,7 +48,9 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(morgan('dev'));
-app.use(express.json({ limit: '50mb' }));
+// Listing photos are resized in the browser, but base64 encoding adds overhead.
+// Allow a reasonable multi-photo request while retaining a bounded request size.
+app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // CORS - use FRONTEND_URL env var, default to * for dev
@@ -76,7 +104,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/favorites', favoriteRoutes);
-app.use('/api/messages', messageRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/admin', adminRoutes);
 
@@ -89,6 +116,15 @@ app.get('/index.html', (req, res) => {
 });
 
 // Serve static frontend files
+// Do not expose backend source, configuration, or repository metadata through
+// the frontend static-file handler.
+app.use((req, res, next) => {
+  if (/^\/(server|\.git|node_modules)(\/|$)/i.test(req.path) ||
+      /^\/(\.env|package(-lock)?\.json|render\.yaml)$/i.test(req.path)) {
+    return res.status(404).end();
+  }
+  next();
+});
 app.use(express.static(path.join(__dirname, '..')));
 
 // Catch-all: real pages resolve above via express.static. Anything unmatched
@@ -101,35 +137,57 @@ app.get('*', async (req, res) => {
   res.status(404).sendFile(path.join(__dirname, '..', '404.html'));
 });
 
-// Initialize database and create admin user
+// Final error handler for rejected async routes and unexpected middleware errors.
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  console.error('Request failed:', err && err.message ? err.message : err);
+  res.status(err.status && err.status >= 400 && err.status < 600 ? err.status : 500)
+    .json({ error: 'An unexpected server error occurred. Please try again.' });
+});
+
+// Initialize database and optionally provision an admin user
 async function initializeApp() {
   await initDb();
   await runMigration();
+
+  const supabaseStorageConfigured = !!(
+    process.env.SUPABASE_URL &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY &&
+    process.env.SUPABASE_BUCKET
+  );
+  if (process.env.NODE_ENV === 'production' && !supabaseStorageConfigured) {
+    console.warn('[WARN] Persistent image storage is not configured. Set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and SUPABASE_BUCKET for Supabase Storage.');
+  }
   
   const db = getDb();
   
-  // Admin account is chigodobenji@gmail.com. Defaults to that address when
-  // ADMIN_EMAIL is not set, and promotes the user if they already exist
-  // (e.g. signed up via Google before first boot) instead of skipping.
+  // Preserve the original configured admin account. If it already exists,
+  // ensure it remains an admin; do not change its password or other profile data.
+  // A new admin is created only when both environment variables are configured.
   const adminEmail = String(process.env.ADMIN_EMAIL || 'chigodobenji@gmail.com').trim().toLowerCase();
-  if (adminEmail) {
-    try {
-      const existingAdmin = await db.prepare('SELECT id, role FROM users WHERE email = ?').get(adminEmail);
-      if (!existingAdmin) {
-        const passwordHash = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'admin123', 10);
-        await db.prepare('INSERT INTO users (id, fullName, email, passwordHash, role, phone) VALUES (?, ?, ?, ?, ?, ?)').run(
-          uuidv4(), 'Admin', adminEmail, passwordHash, 'admin', '+263 77 000 0000'
-        );
-        console.log('[OK]  Admin created:', adminEmail);
-      } else if (existingAdmin.role !== 'admin') {
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  try {
+    const existingAdmin = await db.prepare('SELECT id, role FROM users WHERE LOWER(email) = ?').get(adminEmail);
+    if (existingAdmin) {
+      if (existingAdmin.role !== 'admin') {
         await db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(existingAdmin.id);
-        console.log('[OK]  Existing user promoted to admin:', adminEmail);
+        console.log('[OK] Configured admin account role restored');
+      } else {
+        console.log('[OK] Configured admin account exists');
       }
-    } catch (err) {
-      console.warn('Skipped admin creation:', err.message);
+    } else if (adminPassword) {
+      const passwordHash = await bcrypt.hash(adminPassword, 12);
+      await db.prepare('INSERT INTO users (id, fullName, email, passwordHash, role, phone) VALUES (?, ?, ?, ?, ?, ?)').run(
+        uuidv4(), 'Admin', adminEmail, passwordHash, 'admin', ''
+      );
+      console.log('[OK] Admin account provisioned from ADMIN_EMAIL');
+    } else {
+      console.warn('[WARN] Admin account not found; set ADMIN_PASSWORD to provision it safely');
     }
+  } catch (err) {
+    console.warn('Admin account initialization failed:', err.message);
   }
-  
+
   // One-time cleanup: remove the sample/demo listings and demo landlord
   // account that used to be auto-seeded on every server start. Safe to run
   // repeatedly - it's a no-op once they're gone.

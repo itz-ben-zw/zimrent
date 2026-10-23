@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
@@ -11,9 +12,15 @@ const smsService = require('../services/smsService');
 
 const router = express.Router();
 
+// Ensure handlers can safely validate requests with missing or non-object bodies.
+router.use((req, res, next) => {
+  if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) req.body = {};
+  next();
+});
+
 // In-memory OTP store (in production, use database/Redis)
 const otpStore = new Map();
-function generateOTP() { return Math.floor(100000 + Math.random() * 900000).toString(); }
+function generateOTP() { return crypto.randomInt(100000, 1000000).toString(); }
 
 function jwtExpiresIn() {
   const raw = process.env.JWT_EXPIRES_IN;
@@ -40,9 +47,6 @@ function userResponse(user) {
     authProvider: user.authProvider || 'email'
   };
 }
-
-// Reserved admin address - always resolves to the admin account.
-const ADMIN_EMAIL_RESERVED = String(process.env.ADMIN_EMAIL || 'chigodobenji@gmail.com').trim().toLowerCase();
 
 // POST /api/auth/register
 router.post('/register', memoryUpload.single('profileImage'), async (req, res) => {
@@ -77,7 +81,7 @@ router.post('/register', memoryUpload.single('profileImage'), async (req, res) =
   if (!fullName || !email || !password) {
     return res.status(400).json({ error: 'Full name, email, and password are required' });
   }
-  if (password.length < 8) {
+  if (typeof password !== 'string' || password.length < 8) {
     return res.status(400).json({ error: 'Password must be at least 8 characters' });
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -116,35 +120,28 @@ router.post('/register', memoryUpload.single('profileImage'), async (req, res) =
     fullName: cleanName,
     email: cleanEmail,
     passwordHash,
-    role: (cleanEmail === ADMIN_EMAIL_RESERVED) ? 'admin' : (role || 'tenant'),
+    role: role || 'tenant',
     phone: cleanPhone || '',
     username: username || null,
     profileImage,
     authProvider: 'email',
-    providerId: '',
-    emailVerified: emailService.isConfigured() ? 0 : 1
+    providerId: ''
   };
 
-  await db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, phone, username, profileImage, authProvider, providerId, emailVerified) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-    user.id, user.fullName, user.email, user.passwordHash, user.role, user.phone, user.username, user.profileImage, user.authProvider, user.providerId, user.emailVerified
+  await db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, phone, username, profileImage, authProvider, providerId) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    user.id, user.fullName, user.email, user.passwordHash, user.role, user.phone, user.username, user.profileImage, user.authProvider, user.providerId
   );
 
-  // Only issue a verification token + send the email when SMTP is configured.
-  // When SMTP isn't available (e.g. demo/dev on Render), auto-verify so new
-  // accounts aren't stuck behind a gate they can never satisfy.
-  let emailVerificationSent = false;
-  let verifyToken = null;
-  if (emailService.isConfigured()) {
-    verifyToken = uuidv4();
-    const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    await db.prepare('INSERT INTO email_verifications (id, userId, token, expiresAt) VALUES (?, ?, ?, ?)').run(uuidv4(), user.id, verifyToken, verifyExpires);
+  // Issue verification email token
+  const verifyToken = uuidv4();
+  const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  await db.prepare('INSERT INTO email_verifications (id, userId, token, expiresAt) VALUES (?, ?, ?, ?)').run(uuidv4(), user.id, verifyToken, verifyExpires);
 
-    // Send the verification email for real (non-fatal if delivery fails; the
-    // user can resend later). emailVerificationSent tells the frontend whether
-    // a mail actually went out, so we never silently pretend it did.
-    emailVerificationSent = await emailService.sendVerificationEmail(email, fullName, verifyToken);
-  }
+  // Send the verification email for real (non-fatal if delivery fails; the
+  // user can resend later). emailVerificationSent tells the frontend whether
+  // a mail actually went out, so we never silently pretend it did.
+  const emailVerificationSent = await emailService.sendVerificationEmail(email, fullName, verifyToken);
 
   const accessToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
   const refreshToken = await issueRefreshToken(id, req);
@@ -153,7 +150,7 @@ router.post('/register', memoryUpload.single('profileImage'), async (req, res) =
   // Dev only: return the raw token so automated tests can exercise the
   // verify-email flow without SMTP. Never returned in production, where it
   // would let anyone "verify" without receiving the email.
-  if (process.env.NODE_ENV !== 'production' && verifyToken) {
+  if (process.env.NODE_ENV !== 'production') {
     responseBody.verifyToken = verifyToken;
   }
   res.status(201).json(responseBody);
@@ -173,7 +170,7 @@ async function issueRefreshToken(userId, req) {
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
+  if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
@@ -204,9 +201,13 @@ router.post('/login', async (req, res) => {
 // The client sends the Google access token from Google Identity Services;
 // the server verifies it with Google and trusts ONLY that result. Accepting
 // email/googleId posted by the browser would let anyone sign in as any user.
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '909174371495-l1f3thbsm4fkbidbdtq8igpks1mutj3h.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+// Reserved admin address - Google sign-in as this email always resolves to
+// the admin account and never downgrades it to tenant.
+
 router.post('/google', async (req, res) => {
-  const { accessToken, role } = req.body;
+  const { accessToken } = req.body;
+  const requestedRole = req.body.role === 'landlord' ? 'landlord' : 'tenant';
 
   if (!accessToken || typeof accessToken !== 'string') {
     return res.status(400).json({ error: 'Google access token is required' });
@@ -220,10 +221,10 @@ router.post('/google', async (req, res) => {
     }
     const info = await resp.json();
     // Token must have been issued for OUR client ID, not another app's.
-    if (info.aud && info.aud !== GOOGLE_CLIENT_ID) {
+    if (!GOOGLE_CLIENT_ID || (info.issued_to !== GOOGLE_CLIENT_ID && info.aud !== GOOGLE_CLIENT_ID)) {
       return res.status(401).json({ error: 'Google token was issued for a different app' });
     }
-    if (!info.sub || !info.email) {
+    if (!info.sub || !info.email || String(info.email_verified ?? info.verified_email).toLowerCase() !== 'true') {
       return res.status(401).json({ error: 'Google account is missing an email address' });
     }
     googleUser = { sub: info.sub, email: info.email, name: info.name || '', picture: info.picture || '' };
@@ -231,9 +232,6 @@ router.post('/google', async (req, res) => {
     console.warn('Google token verification failed:', err.message);
     return res.status(502).json({ error: 'Could not verify Google sign-in. Please try again.' });
   }
-
-  const validRoles = ['tenant', 'landlord'];
-  const userRole = role && validRoles.includes(role) ? role : 'tenant';
 
   const db = getDb();
   let user = await db.prepare('SELECT * FROM users WHERE providerId = ? AND authProvider = ?').get(googleUser.sub, 'google');
@@ -251,18 +249,28 @@ router.post('/google', async (req, res) => {
       const id = uuidv4();
       await db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, username, profileImage, authProvider, providerId, emailVerified) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`).run(
-        id, googleUser.name || googleUser.email.split('@')[0], googleUser.email, bcrypt.hashSync(uuidv4(), 10), userRole, null, googleUser.picture || '', 'google', googleUser.sub
+        id, googleUser.name || googleUser.email.split('@')[0], googleUser.email, bcrypt.hashSync(uuidv4(), 10), requestedRole, null, googleUser.picture || '', 'google', googleUser.sub
       );
       user = await db.prepare('SELECT * FROM users WHERE id = ?').get(id);
     }
   }
 
+  // Allow a signed-in tenant to opt into landlord features explicitly.
+  // Never change an administrator's role, and never downgrade an existing landlord.
+  if (user.role === 'tenant' && requestedRole === 'landlord') {
+    await db.prepare("UPDATE users SET role = 'landlord', updatedAt = CURRENT_TIMESTAMP WHERE id = ?").run(user.id);
+    user = await db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
+  }
+
   // Reserved admin address: Google sign-in as this email always resolves to
-  // the admin account and never downgrades it to tenant, even if the account
-  // was first created (or linked to Google) before the admin seed ran.
+  // the admin account and never downgrades it to tenant.
   if (String(user.email || '').toLowerCase() === ADMIN_EMAIL_RESERVED && user.role !== 'admin') {
-    await db.prepare(`UPDATE users SET role = 'admin' WHERE id = ?`).run(user.id);
+    await db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(user.id);
     user.role = 'admin';
+  }
+
+  if (user.status === 'suspended') {
+    return res.status(403).json({ error: 'This account has been suspended. Contact support for help.' });
   }
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
@@ -274,11 +282,15 @@ router.post('/google', async (req, res) => {
 router.post('/phone/send-otp', async (req, res) => {
   const { phone } = req.body;
 
-  if (!phone || !/^\+?[\d\s\-]{7,15}$/.test(phone)) {
+  if (typeof phone !== 'string' || !/^\+?[\d\s().-]{7,24}$/.test(phone)) {
     return res.status(400).json({ error: 'Valid phone number is required' });
   }
 
-  const cleanPhone = phone.replace(/[\s\-]/g, '');
+  const cleanPhone = phone.replace(/[\s().-]/g, '');
+  if (!/^\+?\d{7,15}$/.test(cleanPhone)) {
+    return res.status(400).json({ error: 'Valid phone number is required' });
+  }
+
   const otp = generateOTP();
 
   const isProd = process.env.NODE_ENV === 'production';
@@ -293,7 +305,7 @@ router.post('/phone/send-otp', async (req, res) => {
   }
 
   // Store OTP with 5-minute expiry
-  otpStore.set(cleanPhone, { otp, expiresAt: Date.now() + 5 * 60 * 1000 });
+  otpStore.set(cleanPhone, { otp, expiresAt: Date.now() + 5 * 60 * 1000, attempts: 0 });
 
   let sent = false;
   try {
@@ -317,42 +329,62 @@ router.post('/phone/send-otp', async (req, res) => {
 
 // POST /api/auth/phone/verify - Verify OTP and login/register
 router.post('/phone/verify', async (req, res) => {
-  const { phone, otp, fullName, role } = req.body;
+  const { phone, otp, fullName } = req.body;
 
   if (!phone || !otp) {
     return res.status(400).json({ error: 'Phone and OTP are required' });
   }
 
-  const stored = otpStore.get(phone);
+  // Use the same canonical format as /phone/send-otp, including dots and parentheses.
+  if (typeof phone !== 'string' || !/^\+?[\d\s().-]{7,24}$/.test(phone)) {
+    return res.status(400).json({ error: 'Valid phone number is required' });
+  }
+  const cleanPhone = phone.replace(/[\s().-]/g, '');
+  if (!/^\+?\d{7,15}$/.test(cleanPhone)) {
+    return res.status(400).json({ error: 'Valid phone number is required' });
+  }
+  if (typeof otp !== 'string' && typeof otp !== 'number') {
+    return res.status(400).json({ error: 'Valid OTP is required' });
+  }
+  const stored = otpStore.get(cleanPhone);
   if (!stored) {
     return res.status(400).json({ error: 'No OTP sent to this number. Request a new OTP.' });
   }
   if (Date.now() > stored.expiresAt) {
-    otpStore.delete(phone);
+    otpStore.delete(cleanPhone);
     return res.status(400).json({ error: 'OTP expired. Request a new one.' });
   }
-  if (stored.otp !== otp) {
+  if (stored.attempts >= 5) {
+    otpStore.delete(cleanPhone);
+    return res.status(429).json({ error: 'Too many incorrect attempts. Request a new OTP.' });
+  }
+  if (stored.otp !== String(otp)) {
+    stored.attempts += 1;
     return res.status(400).json({ error: 'Invalid OTP' });
   }
 
   // OTP verified - clear it
-  otpStore.delete(phone);
+  otpStore.delete(cleanPhone);
 
   const db = getDb();
-  let user = await db.prepare('SELECT * FROM users WHERE phone = ? AND phone != \'\'').get(phone);
+  let user = await db.prepare('SELECT * FROM users WHERE phone = ? AND phone != \'\'').get(cleanPhone);
 
   if (!user) {
     // Auto-register with phone
     const id = uuidv4();
-    const email = `user_${phone.replace(/[^0-9]/g, '')}@homify.phone`;
+    const email = `user_${cleanPhone.replace(/[^0-9]/g, '')}@homify.phone`;
     await db.prepare(`INSERT INTO users (id, fullName, email, passwordHash, role, phone, username, profileImage, authProvider, phoneVerified) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-      id, fullName || 'User', email, bcrypt.hashSync(uuidv4(), 10), role || 'tenant', phone, null, '', 'phone', 1
+      id, fullName || 'User', email, bcrypt.hashSync(uuidv4(), 10), 'tenant', cleanPhone, null, '', 'phone', 1
     );
     user = await db.prepare('SELECT * FROM users WHERE id = ?').get(id);
   } else if (!user.phoneVerified) {
     await db.prepare('UPDATE users SET phoneVerified = 1, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
     user.phoneVerified = 1;
+  }
+
+  if (user.status === 'suspended') {
+    return res.status(403).json({ error: 'This account has been suspended. Contact support for help.' });
   }
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: jwtExpiresIn() });
@@ -476,12 +508,13 @@ router.post('/resend-verification', authenticate, async (req, res) => {
 // POST /api/auth/forgot-password
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
-  if (!email) {
+  if (typeof email !== 'string' || !email.trim()) {
     return res.status(400).json({ error: 'Email is required' });
   }
 
   const db = getDb();
-  const user = await db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  const cleanEmail = email.trim().toLowerCase();
+  const user = await db.prepare('SELECT id FROM users WHERE email = ?').get(cleanEmail);
 
   if (!user) {
     return res.json({ message: 'If the email exists, a reset link has been sent' });
@@ -491,7 +524,7 @@ router.post('/forgot-password', async (req, res) => {
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
   await db.prepare('INSERT INTO password_resets (id, userId, token, expiresAt) VALUES (?, ?, ?, ?)').run(uuidv4(), user.id, resetToken, expiresAt);
 
-  await emailService.sendPasswordResetEmail(email, resetToken);
+  await emailService.sendPasswordResetEmail(cleanEmail, resetToken);
 
   const responseBody = { message: 'If the email exists, a reset link has been sent' };
   // Dev only: expose the token so the automated test suite can exercise the
@@ -511,8 +544,8 @@ router.post('/reset-password', async (req, res) => {
   if (!token || !newPassword) {
     return res.status(400).json({ error: 'Token and new password are required' });
   }
-  if (newPassword.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  if (typeof newPassword !== 'string' || newPassword.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
   }
 
   const db = getDb();
@@ -524,6 +557,8 @@ router.post('/reset-password', async (req, res) => {
   const passwordHash = bcrypt.hashSync(newPassword, 10);
   await db.prepare('UPDATE users SET passwordHash = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?').run(passwordHash, reset.userId);
   await db.prepare('UPDATE password_resets SET used = 1 WHERE id = ?').run(reset.id);
+  // Revoke all existing sessions after a password reset.
+  await db.prepare('UPDATE refresh_tokens SET revoked = 1 WHERE userId = ?').run(reset.userId);
 
   res.json({ message: 'Password reset successfully' });
 });

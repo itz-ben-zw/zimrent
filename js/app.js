@@ -90,29 +90,48 @@ function navigateTo(page) {
 }
 
 // --- Image Helpers ---
-function processImages(fileInput) {
-  return new Promise((resolve) => {
-    const images = [];
-    const files = fileInput.files;
-    if (!files || files.length === 0) {
-      resolve(images);
+// Read and resize images before sending them to the API. The previous
+// implementation used a fixed 300ms timer, which could submit before large
+// files had finished reading, and sent full-resolution originals as huge JSON.
+async function processImages(fileInput) {
+  const files = Array.from(fileInput && fileInput.files ? fileInput.files : []);
+  if (!files.length) return [];
+
+  if (files.length > 10) {
+    throw new Error('Please select no more than 10 images at a time.');
+  }
+
+  return Promise.all(files.map(file => new Promise((resolve, reject) => {
+    if (!file.type || !file.type.startsWith('image/')) {
+      reject(new Error(file.name + ' is not a supported image.'));
       return;
     }
 
-    Array.from(files).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        images.push({
-          data: e.target.result,
-          name: file.name
-        });
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read ' + file.name + '. Please try again.'));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error('Could not process ' + file.name + '. Try a JPG or PNG image.'));
+      image.onload = () => {
+        const maxDimension = 1600;
+        const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const context = canvas.getContext('2d');
+        if (!context) {
+          reject(new Error('Your browser could not prepare the image. Please try another browser.'));
+          return;
+        }
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        // JPEG gives predictable, substantially smaller uploads than raw camera images.
+        const data = canvas.toDataURL('image/jpeg', 0.78);
+        resolve({ data, name: file.name.replace(/\.[^.]+$/, '') + '.jpg' });
       };
-      reader.readAsDataURL(file);
-    });
-
-    // Small delay to ensure all readers complete
-    setTimeout(() => resolve(images), 300);
-  });
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  })));
 }
 
 if (!localStorage.getItem(STORAGE_KEY)) {

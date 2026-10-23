@@ -56,10 +56,10 @@ services:
       - key: GOOGLE_CLIENT_ID
         sync: false
       # Image storage - when set, uploads go to Supabase Storage (durable on Render).
-      # Leave blank to fall back to the ephemeral local uploads/ dir.
+      # The service-role key remains a private Render secret; the bucket name is not secret.
       - key: SUPABASE_URL
-        sync: false
+        value: https://llfywhxskldofuhtfjmv.supabase.co
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: SUPABASE_BUCKET
-        sync: false
+        value: homify
